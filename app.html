@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinanceIQ — Painel</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css" />
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/home.css" />
+</head>
+<body>
+
+  <!-- LOADING -->
+  <div id="appLoading" style="position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:999">
+    <div style="width:36px;height:36px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center">
+      <i class="ti ti-chart-pie" style="color:#fff;font-size:18px"></i>
+    </div>
+    <div style="font-size:16px;font-weight:600;color:var(--text-primary)">FinanceIQ</div>
+    <div style="width:32px;height:32px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  </div>
+
+  <!-- APP -->
+  <div id="appLayout" class="app-layout" style="display:none">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-mark"><i class="ti ti-chart-pie"></i></div>
+        <span class="sidebar-logo-text">FinanceIQ</span>
+      </div>
+
+      <div class="sidebar-section">Principal</div>
+      <div class="sidebar-nav">
+        <div class="nav-item active" data-page="home" onclick="navigateTo('home')">
+          <i class="ti ti-home"></i><span>Início</span>
+        </div>
+        <div class="nav-item" data-page="lancamentos" onclick="navigateTo('lancamentos')">
+          <i class="ti ti-arrows-exchange"></i><span>Lançamentos</span>
+        </div>
+        <div class="nav-item" data-page="dashboard" onclick="navigateTo('dashboard')">
+          <i class="ti ti-chart-bar"></i><span>Dashboard</span>
+        </div>
+        <div class="nav-item" data-page="relatorios" onclick="navigateTo('relatorios')">
+          <i class="ti ti-file-text"></i><span>Relatórios</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">Sistema</div>
+      <div class="sidebar-nav">
+        <div class="nav-item" data-page="configuracoes" onclick="navigateTo('configuracoes')">
+          <i class="ti ti-settings"></i><span>Configurações</span>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="sidebar-user" style="flex:1" onclick="navigateTo('configuracoes')">
+            <div class="sidebar-avatar" id="sidebarAvatar">M</div>
+            <div class="sidebar-user-info">
+              <div class="sidebar-username" id="sidebarUsername">Carregando...</div>
+              <div class="sidebar-email" id="sidebarEmail"></div>
+            </div>
+          </div>
+          <button class="sidebar-logout" onclick="handleLogout()" title="Sair">
+            <i class="ti ti-logout"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CONTEÚDO -->
+    <main class="main-content">
+      <header class="topbar">
+        <button class="menu-toggle" onclick="toggleSidebar()">
+          <i class="ti ti-menu-2"></i>
+        </button>
+        <span class="topbar-title" id="topbarTitle">Início</span>
+        <div class="topbar-badge" id="competenciaBadge">
+          <i class="ti ti-calendar"></i>
+          <span>Julho 2026</span>
+        </div>
+        <button class="topbar-btn" onclick="toggleTheme()" id="themeToggle" title="Alternar tema">
+          <i class="ti ti-moon"></i>
+        </button>
+      </header>
+
+      <div class="page-container">
+
+        <!-- HOME -->
+        <div id="page-home" class="page active">
+          <div class="home-greeting">
+            <div>
+              <h1 class="greeting-title" id="greetingTitle">Olá, Maycon</h1>
+              <p class="greeting-sub" id="greetingSub">Resumo financeiro de hoje</p>
+            </div>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-label"><i class="ti ti-wallet"></i>Saldo do mês</div>
+              <div class="kpi-value" id="kpiSaldo">R$ 0,00</div>
+              <div class="kpi-trend" id="kpiSaldoTrend">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><i class="ti ti-trending-up"></i>Entradas</div>
+              <div class="kpi-value" id="kpiEntradas">R$ 0,00</div>
+              <div class="kpi-trend" id="kpiEntradasTrend">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><i class="ti ti-trending-down"></i>Saídas</div>
+              <div class="kpi-value" id="kpiSaidas">R$ 0,00</div>
+              <div class="kpi-trend" id="kpiSaidasTrend">—</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><i class="ti ti-building-bank"></i>Investimentos</div>
+              <div class="kpi-value" id="kpiInvestimentos">R$ 0,00</div>
+              <div class="kpi-trend">Carteira atual</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><i class="ti ti-handshake"></i>Empréstimos</div>
+              <div class="kpi-value" id="kpiEmprestimos">R$ 0,00</div>
+              <div class="kpi-trend">Total em aberto</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><i class="ti ti-shield-check"></i>Reserva</div>
+              <div class="kpi-value" id="kpiReserva">R$ 0,00</div>
+              <div class="kpi-trend">Fundo de emergência</div>
+            </div>
+          </div>
+
+          <div class="section-title">Ações rápidas</div>
+          <div class="quick-actions">
+            <button class="quick-btn btn-entrada" onclick="openLancamento('entrada')">
+              <i class="ti ti-trending-up"></i>Nova entrada
+            </button>
+            <button class="quick-btn btn-saida" onclick="openLancamento('saida')">
+              <i class="ti ti-trending-down"></i>Nova saída
+            </button>
+            <button class="quick-btn btn-cartao" onclick="openLancamento('cartao_credito')">
+              <i class="ti ti-credit-card"></i>Cartão
+            </button>
+            <button class="quick-btn btn-investimento" onclick="openLancamento('investimento')">
+              <i class="ti ti-building-bank"></i>Investimento
+            </button>
+            <button class="quick-btn btn-emprestimo" onclick="openLancamento('emprestimo')">
+              <i class="ti ti-handshake"></i>Empréstimo
+            </button>
+            <button class="quick-btn btn-reserva" onclick="openLancamento('reserva')">
+              <i class="ti ti-shield-check"></i>Reserva
+            </button>
+          </div>
+
+          <div class="home-grid">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Entradas x Saídas</span>
+              </div>
+              <div class="chart-wrapper"><canvas id="chartHomeBar"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Últimos lançamentos</span>
+                <a class="card-link" onclick="navigateTo('lancamentos')">Ver todos</a>
+              </div>
+              <div id="ultimosLancamentos">
+                <div class="empty-state">
+                  <div class="empty-icon"><i class="ti ti-inbox"></i></div>
+                  <div class="empty-text">Nenhum lançamento ainda</div>
+                  <div class="empty-sub">Use as ações rápidas acima para começar</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LANÇAMENTOS -->
+        <div id="page-lancamentos" class="page">
+          <div class="page-header">
+            <h2>Lançamentos</h2>
+            <button class="btn btn-primary btn-sm" onclick="openLancamento()">
+              <i class="ti ti-plus"></i>Novo lançamento
+            </button>
+          </div>
+          <div id="lancamentosContent">
+            <div class="empty-state" style="margin-top:60px">
+              <div class="empty-icon"><i class="ti ti-arrows-exchange"></i></div>
+              <div class="empty-text">Nenhum lançamento este mês</div>
+              <div class="empty-sub">Clique em "Novo lançamento" para registrar</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="page-dashboard" class="page">
+          <div class="page-header"><h2>Dashboard</h2></div>
+          <div class="kpi-grid" style="margin-bottom:24px">
+            <div class="kpi-card">
+              <div class="kpi-label"><i class="ti ti-trending-up"></i>Total entradas</div>
+              <div class="kpi-value" id="dashEntradas">R$ 0,00</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><i class="ti ti-trending-down"></i>Total saídas</div>
+              <div class="kpi-value" id="dashSaidas">R$ 0,00</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><i class="ti ti-wallet"></i>Saldo</div>
+              <div class="kpi-value" id="dashSaldo">R$ 0,00</div>
+            </div>
+          </div>
+          <div class="home-grid">
+            <div class="card">
+              <div class="card-header"><span class="card-title">Visão mensal</span></div>
+              <div class="chart-wrapper"><canvas id="chartDashMensal"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><span class="card-title">Por categoria</span></div>
+              <div class="chart-wrapper"><canvas id="chartDashCategoria"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RELATÓRIOS -->
+        <div id="page-relatorios" class="page">
+          <div class="page-header"><h2>Relatórios</h2></div>
+          <div class="card" style="max-width:480px">
+            <div class="card-title">Gerar relatório PDF</div>
+            <p style="color:var(--text-secondary);font-size:13px;margin-bottom:20px;line-height:1.6">
+              O relatório incluirá todos os lançamentos do mês atual com totais e gráficos.
+            </p>
+            <button class="btn btn-primary" onclick="gerarRelatorio()">
+              <i class="ti ti-file-text"></i>Gerar PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- CONFIGURAÇÕES -->
+        <div id="page-configuracoes" class="page">
+          <div class="page-header"><h2>Configurações</h2></div>
+          <div class="home-grid">
+            <div class="card">
+              <div class="card-title">Meu perfil</div>
+              <div class="form-group">
+                <label class="form-label">Nome de usuário</label>
+                <input class="form-control" id="configUsername" type="text" placeholder="Seu nome" />
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="salvarPerfil()">Salvar alterações</button>
+            </div>
+            <div class="card">
+              <div class="card-title">Aparência</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">
+                <div>
+                  <div style="font-size:13.5px;font-weight:500;color:var(--text-primary)">Tema da interface</div>
+                  <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Claro ou escuro</div>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="toggleTheme()">
+                  <i class="ti ti-moon"></i>Alternar tema
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL LANÇAMENTO -->
+  <div id="modalLancamento" style="display:none;position:fixed;inset:0;background:rgba(15,21,40,0.5);z-index:200;align-items:center;justify-content:center;padding:16px">
+    <div style="background:var(--surface);border-radius:var(--radius-xl);padding:28px;width:100%;max-width:480px;border:1px solid var(--border);max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-md)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+        <h3 style="font-size:16px;font-weight:600" id="modalTitle">Novo lançamento</h3>
+        <button onclick="closeModal()" style="color:var(--text-muted);font-size:22px;display:flex;padding:2px;border-radius:var(--radius-sm);transition:color var(--transition)" class="btn-ghost btn-icon">
+          <i class="ti ti-x"></i>
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Tipo</label>
+        <select class="form-control" id="lancTipo">
+          <option value="entrada">Entrada</option>
+          <option value="saida">Saída</option>
+          <option value="cartao_credito">Cartão de crédito</option>
+          <option value="investimento">Investimento</option>
+          <option value="emprestimo">Empréstimo</option>
+          <option value="reserva">Reserva financeira</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descrição</label>
+        <input class="form-control" id="lancDescricao" type="text" placeholder="Ex: Salário, Aluguel, Mercado..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Valor (R$)</label>
+        <input class="form-control" id="lancValor" type="number" placeholder="0,00" min="0.01" step="0.01" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Data</label>
+        <input class="form-control" id="lancData" type="date" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Observação <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label>
+        <input class="form-control" id="lancObservacao" type="text" placeholder="Alguma observação..." />
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button onclick="closeModal()" class="btn btn-secondary" style="flex:1">Cancelar</button>
+        <button onclick="salvarLancamento()" class="btn btn-primary" style="flex:2">
+          <i class="ti ti-check"></i>Salvar lançamento
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" style="position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 18px;display:none;align-items:center;gap:10px;box-shadow:var(--shadow-md);z-index:500;max-width:360px;font-size:13.5px">
+    <span id="toastIcon" style="font-size:18px;display:flex"></span>
+    <span id="toastMessage" style="color:var(--text-primary)"></span>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="services/supabase.js"></script>
+  <script src="utils/helpers.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

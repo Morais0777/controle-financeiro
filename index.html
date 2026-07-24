@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinanceIQ — Controle Financeiro</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css" />
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/reset.css" />
+  <link rel="stylesheet" href="css/auth.css" />
+</head>
+<body>
+
+  <button class="auth-theme-btn" id="themeToggle" title="Alternar tema">
+    <i class="ti ti-moon"></i>
+  </button>
+
+  <div class="auth-page" id="authPage">
+
+    <!-- Painel esquerdo -->
+    <div class="auth-visual">
+      <div class="auth-visual-content">
+        <div class="auth-logo">
+          <div class="auth-logo-mark"><i class="ti ti-chart-pie"></i></div>
+          <span class="auth-logo-name">FinanceIQ</span>
+        </div>
+        <h1 class="auth-headline">Controle financeiro para quem leva dinheiro a sério</h1>
+        <p class="auth-sub">Acompanhe entradas, saídas, investimentos e reservas em um único lugar.</p>
+        <div class="auth-stats">
+          <div class="auth-stat">
+            <div class="auth-stat-icon"><i class="ti ti-trending-up"></i></div>
+            <div>
+              <div class="auth-stat-label">Saldo do mês</div>
+              <div class="auth-stat-value">R$ 4.250,00</div>
+            </div>
+          </div>
+          <div class="auth-stat">
+            <div class="auth-stat-icon"><i class="ti ti-building-bank"></i></div>
+            <div>
+              <div class="auth-stat-label">Investimentos</div>
+              <div class="auth-stat-value">R$ 12.500,00</div>
+            </div>
+          </div>
+          <div class="auth-stat">
+            <div class="auth-stat-icon"><i class="ti ti-shield-check"></i></div>
+            <div>
+              <div class="auth-stat-label">Reserva financeira</div>
+              <div class="auth-stat-value">R$ 8.000,00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Painel direito -->
+    <div class="auth-form-panel">
+      <div class="auth-form-container">
+        <h1 class="auth-form-title" id="authTitle">Bem-vindo de volta</h1>
+        <p class="auth-form-subtitle" id="authSubtitle">Entre na sua conta para continuar</p>
+
+        <div class="auth-tabs" id="authTabs">
+          <button class="auth-tab active" id="tabLogin" onclick="showLogin()">Entrar</button>
+          <button class="auth-tab" id="tabRegister" onclick="showRegister()">Cadastrar</button>
+        </div>
+
+        <!-- LOGIN -->
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label class="form-label">E-mail</label>
+            <div class="form-input-wrapper">
+              <i class="ti ti-mail form-input-icon"></i>
+              <input class="form-input" type="email" id="loginEmail" placeholder="seu@email.com" required autocomplete="email" />
+            </div>
+            <span class="form-error" id="loginEmailError"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Senha</label>
+            <div class="form-input-wrapper">
+              <i class="ti ti-lock form-input-icon"></i>
+              <input class="form-input has-right-icon" type="password" id="loginPassword" placeholder="Sua senha" required />
+              <i class="ti ti-eye form-input-right-icon" onclick="togglePassword('loginPassword', this)"></i>
+            </div>
+            <span class="form-error" id="loginPasswordError"></span>
+          </div>
+          <div class="auth-link-row">
+            <a href="#" class="auth-link" onclick="showForgotPassword(event)">Esqueceu a senha?</a>
+          </div>
+          <button type="submit" class="btn-primary" id="loginBtn">
+            <div class="spinner" id="loginSpinner"></div>
+            <span id="loginBtnText">Entrar</span>
+          </button>
+        </form>
+
+        <!-- CADASTRO -->
+        <form id="registerForm" style="display:none" onsubmit="handleRegister(event)">
+          <div class="form-group">
+            <label class="form-label">Nome de usuário</label>
+            <div class="form-input-wrapper">
+              <i class="ti ti-user form-input-icon"></i>
+              <input class="form-input" type="text" id="regUsername" placeholder="Como quer ser chamado?" required minlength="3" />
+            </div>
+            <span class="form-error" id="regUsernameError"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">E-mail</label>
+            <div class="form-input-wrapper">
+              <i class="ti ti-mail form-input-icon"></i>
+              <input class="form-input" type="email" id="regEmail" placeholder="seu@email.com" required />
+            </div>
+            <span class="form-error" id="regEmailError"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Senha</label>
+            <div class="form-input-wrapper">
+              <i class="ti ti-lock form-input-icon"></i>
+              <input class="form-input has-right-icon" type="password" id="regPassword" placeholder="Mínimo 8 caracteres" required minlength="8" />
+              <i class="ti ti-eye form-input-right-icon" onclick="togglePassword('regPassword', this)"></i>
+            </div>
+            <span class="form-error" id="regPasswordError"></span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirmar senha</label>
+            <div class="form-input-wrapper">
+              <i class="ti ti-lock form-input-icon"></i>
+              <input class="form-input has-right-icon" type="password" id="regPasswordConfirm" placeholder="Repita a senha" required />
+              <i class="ti ti-eye form-input-right-icon" onclick="togglePassword('regPasswordConfirm', this)"></i>
+            </div>
+            <span class="form-error" id="regPasswordConfirmError"></span>
+          </div>
+          <button type="submit" class="btn-primary" id="registerBtn">
+            <div class="spinner" id="registerSpinner"></div>
+            <span id="registerBtnText">Criar conta</span>
+          </button>
+        </form>
+
+        <!-- VERIFICAÇÃO -->
+        <div id="verifyForm" style="display:none">
+          <p style="color:var(--text-secondary);font-size:13.5px;text-align:center;margin-bottom:4px">
+            Enviamos um código para
+          </p>
+          <p style="text-align:center;font-weight:600;font-size:14px;color:var(--text-primary);margin-bottom:4px" id="verifyEmail"></p>
+          <div class="code-input-row">
+            <input class="code-input" type="text" maxlength="1" id="code0" oninput="moveCode(0)" />
+            <input class="code-input" type="text" maxlength="1" id="code1" oninput="moveCode(1)" />
+            <input class="code-input" type="text" maxlength="1" id="code2" oninput="moveCode(2)" />
+            <input class="code-input" type="text" maxlength="1" id="code3" oninput="moveCode(3)" />
+            <input class="code-input" type="text" maxlength="1" id="code4" oninput="moveCode(4)" />
+            <input class="code-input" type="text" maxlength="1" id="code5" oninput="moveCode(5)" />
+          </div>
+          <button class="btn-primary" onclick="handleVerifyCode()">
+            <div class="spinner" id="verifySpinner"></div>
+            <span id="verifyBtnText">Verificar código</span>
+          </button>
+          <div class="resend-row">Não recebeu? <button class="resend-btn" id="resendBtn" onclick="resendCode()">Reenviar código</button></div>
+        </div>
+
+        <!-- RECUPERAÇÃO -->
+        <div id="forgotForm" style="display:none">
+          <p style="color:var(--text-secondary);font-size:13.5px;margin-bottom:20px;line-height:1.6">
+            Informe seu e-mail e enviaremos um link para redefinir sua senha.
+          </p>
+          <div class="form-group">
+            <label class="form-label">E-mail</label>
+            <div class="form-input-wrapper">
+              <i class="ti ti-mail form-input-icon"></i>
+              <input class="form-input" type="email" id="forgotEmail" placeholder="seu@email.com" required />
+            </div>
+            <span class="form-error" id="forgotEmailError"></span>
+          </div>
+          <button class="btn-primary" onclick="handleForgotPassword()">
+            <div class="spinner" id="forgotSpinner"></div>
+            <span id="forgotBtnText">Enviar link</span>
+          </button>
+          <div class="resend-row" style="margin-top:16px">
+            <a href="#" class="auth-link" onclick="showLogin(event)">← Voltar ao login</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" style="position:fixed;bottom:24px;right:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 18px;display:none;align-items:center;gap:10px;box-shadow:var(--shadow-md);z-index:500;max-width:360px;font-size:13.5px;animation:toastIn .25s ease">
+    <span id="toastIcon" style="font-size:18px;display:flex"></span>
+    <span id="toastMessage" style="color:var(--text-primary)"></span>
+  </div>
+
+  <style>@keyframes toastIn{from{transform:translateX(16px);opacity:0}to{transform:none;opacity:1}}</style>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="services/supabase.js"></script>
+  <script src="utils/helpers.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>
