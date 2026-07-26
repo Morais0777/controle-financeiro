@@ -222,19 +222,58 @@
           </div>
         </div>
 
-        <!-- RELATÓRIOS -->
-        <div id="page-relatorios" class="page">
-          <div class="page-header"><h2>Relatórios</h2></div>
-          <div class="card" style="max-width:480px">
-            <div class="card-title">Gerar relatório PDF</div>
-            <p style="color:var(--text-secondary);font-size:13px;margin-bottom:20px;line-height:1.6">
-              O relatório incluirá todos os lançamentos do mês atual com totais e gráficos.
-            </p>
-            <button class="btn btn-primary" onclick="gerarRelatorio()">
-              <i class="ti ti-file-text"></i>Gerar PDF
-            </button>
-          </div>
+<!-- RELATÓRIOS -->
+<div id="page-relatorios" class="page">
+  <div class="page-header"><h2>Relatórios</h2></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:800px">
+
+    <div class="card">
+      <div style="width:44px;height:44px;background:var(--accent-bg);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+        <i class="ti ti-file-text" style="font-size:22px;color:var(--accent)"></i>
+      </div>
+      <div class="card-title">Relatório mensal em PDF</div>
+      <p style="color:var(--text-secondary);font-size:13px;margin-bottom:20px;line-height:1.6">
+        Gera um PDF profissional com todos os lançamentos do mês atual, totalizadores por tipo e saldo final.
+      </p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
+          <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>
+          Todos os lançamentos do mês
         </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
+          <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>
+          Totais por tipo (entradas, saídas, etc.)
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
+          <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>
+          Saldo final do período
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
+          <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>
+          Layout profissional com cabeçalho
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="gerarRelatorio()" style="width:100%">
+        <i class="ti ti-download"></i>Baixar PDF do mês atual
+      </button>
+    </div>
+
+    <div class="card" style="background:var(--surface-alt);border-style:dashed">
+      <div style="width:44px;height:44px;background:var(--border);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+        <i class="ti ti-chart-bar" style="font-size:22px;color:var(--text-muted)"></i>
+      </div>
+      <div style="font-size:14px;font-weight:600;color:var(--text-secondary);margin-bottom:8px">Relatório por período</div>
+      <p style="color:var(--text-muted);font-size:13px;line-height:1.6">
+        Selecione um intervalo de datas e exporte os dados de múltiplos meses em um único relatório.
+      </p>
+      <div style="margin-top:20px;padding:10px 14px;background:var(--accent-bg);border-radius:var(--radius);font-size:12px;color:var(--accent);font-weight:500;display:flex;align-items:center;gap:6px">
+        <i class="ti ti-clock" style="font-size:14px"></i>
+        Em breve
+      </div>
+    </div>
+
+  </div>
+</div>
 
         <!-- CONFIGURAÇÕES -->
       <div id="page-configuracoes" class="page">
@@ -471,8 +510,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
   <script src="services/supabase.js"></script>
   <script src="utils/helpers.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/relatorios.js"></script>
 </body>
 </html>
