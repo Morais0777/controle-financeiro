@@ -636,3 +636,312 @@ document.getElementById('modalLancamento')?.addEventListener('click', function(e
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
 });
+
+// ─────────────────────────────────────────────
+// CONFIGURAÇÕES — ABAS
+// ─────────────────────────────────────────────
+
+function showCfgTab(tab) {
+  document.querySelectorAll('.cfg-tab').forEach((t, i) => {
+    t.classList.toggle('active', ['perfil','categorias','fixos','competencias'][i] === tab);
+  });
+  document.querySelectorAll('.cfg-panel').forEach(p => p.style.display = 'none');
+  document.getElementById(`cfg-${tab}`).style.display = 'block';
+
+  if (tab === 'categorias')   carregarCategorias();
+  if (tab === 'fixos')        carregarFixos();
+  if (tab === 'competencias') carregarCompetencias();
+}
+
+// ─────────────────────────────────────────────
+// CATEGORIAS
+// ─────────────────────────────────────────────
+
+function selecionarCor(btn) {
+  document.querySelectorAll('.cor-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('catCor').value = btn.dataset.cor;
+}
+
+async function salvarCategoria() {
+  const nome = document.getElementById('catNome').value.trim();
+  const tipo = document.getElementById('catTipo').value;
+  const cor  = document.getElementById('catCor').value;
+
+  if (!nome) { showToast('Informe o nome da categoria', 'warning'); return; }
+
+  const { error } = await window.supabase.from('categorias').insert({
+    user_id: currentUser.id, nome, tipo, cor, ativa: true
+  });
+
+  if (error) {
+    if (error.code === '23505') { showToast('Você já tem uma categoria com este nome', 'warning'); return; }
+    showToast('Erro ao salvar categoria', 'error'); return;
+  }
+
+  showToast('Categoria criada!', 'success');
+  document.getElementById('catNome').value = '';
+  carregarCategorias();
+}
+
+async function carregarCategorias() {
+  const { data } = await window.supabase
+    .from('categorias').select('*')
+    .eq('user_id', currentUser.id)
+    .eq('ativa', true)
+    .order('nome');
+
+  const container = document.getElementById('listaCategorias');
+  const count     = document.getElementById('catCount');
+  if (!container) return;
+
+  const lista = data || [];
+  count.textContent = `${lista.length} categoria${lista.length !== 1 ? 's' : ''}`;
+
+  if (lista.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding:32px 0">
+        <div class="empty-icon"><i class="ti ti-tags"></i></div>
+        <div class="empty-text">Nenhuma categoria ainda</div>
+        <div class="empty-sub">Adicione uma ao lado</div>
+      </div>`;
+    return;
+  }
+
+  const tipoLabel = { entrada: 'Entrada', saida: 'Saída', ambos: 'Ambos' };
+
+  container.innerHTML = lista.map(c => `
+    <div class="cat-item">
+      <div class="cat-icon" style="background:${c.cor}22">
+        <i class="ti ti-tag" style="color:${c.cor}"></i>
+      </div>
+      <div class="cat-info">
+        <div class="cat-nome">${escapeHtml(c.nome)}</div>
+        <div class="cat-sub">${tipoLabel[c.tipo] || c.tipo}</div>
+      </div>
+      <div style="width:10px;height:10px;border-radius:50%;background:${c.cor};flex-shrink:0"></div>
+      <button class="btn btn-ghost btn-icon btn-sm" onclick="deletarCategoria('${c.id}')" title="Excluir">
+        <i class="ti ti-trash" style="font-size:15px;color:var(--text-muted)"></i>
+      </button>
+    </div>
+  `).join('');
+}
+
+async function deletarCategoria(id) {
+  showConfirm('Excluir categoria', 'Deseja excluir esta categoria? Os lançamentos vinculados não serão afetados.', async () => {
+    const { error } = await window.supabase
+      .from('categorias').update({ ativa: false }).eq('id', id);
+    if (error) { showToast('Erro ao excluir', 'error'); return; }
+    showToast('Categoria excluída', 'success');
+    carregarCategorias();
+  });
+}
+
+// ─────────────────────────────────────────────
+// ITENS FIXOS
+// ─────────────────────────────────────────────
+
+async function salvarItemFixo() {
+  const nome  = document.getElementById('fixoNome').value.trim();
+  const tipo  = document.getElementById('fixoTipo').value;
+  const valor = parseFloat(document.getElementById('fixoValor').value);
+  const dia   = parseInt(document.getElementById('fixoDia').value) || null;
+  const obs   = document.getElementById('fixoObs').value.trim();
+
+  if (!nome)          { showToast('Informe o nome do item', 'warning'); return; }
+  if (!valor || valor <= 0) { showToast('Informe um valor válido', 'warning'); return; }
+
+  const { error } = await window.supabase.from('itens_fixos').insert({
+    user_id: currentUser.id, nome, tipo, valor,
+    dia_vencimento: dia, observacao: obs || null, ativo: true
+  });
+
+  if (error) { showToast('Erro ao salvar item fixo', 'error'); console.error(error); return; }
+
+  showToast('Item fixo cadastrado!', 'success');
+  document.getElementById('fixoNome').value  = '';
+  document.getElementById('fixoValor').value = '';
+  document.getElementById('fixoDia').value   = '';
+  document.getElementById('fixoObs').value   = '';
+  carregarFixos();
+}
+
+async function carregarFixos() {
+  const { data } = await window.supabase
+    .from('itens_fixos').select('*')
+    .eq('user_id', currentUser.id)
+    .eq('ativo', true)
+    .order('nome');
+
+  const container = document.getElementById('listaFixos');
+  const count     = document.getElementById('fixoCount');
+  if (!container) return;
+
+  const lista = data || [];
+  count.textContent = `${lista.length} item${lista.length !== 1 ? 'ns' : ''}`;
+
+  if (lista.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding:32px 0">
+        <div class="empty-icon"><i class="ti ti-refresh"></i></div>
+        <div class="empty-text">Nenhum item fixo ainda</div>
+        <div class="empty-sub">Adicione salário, aluguel, etc.</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = lista.map(f => `
+    <div class="fixo-item">
+      <div class="fixo-icon" style="background:${f.tipo==='entrada'?'var(--color-entrada-bg)':'var(--color-saida-bg)'}">
+        <i class="ti ${f.tipo==='entrada'?'ti-trending-up':'ti-trending-down'}"
+           style="color:${f.tipo==='entrada'?'var(--color-entrada)':'var(--color-saida)'}"></i>
+      </div>
+      <div class="fixo-info">
+        <div class="fixo-nome">${escapeHtml(f.nome)}</div>
+        <div class="fixo-sub">${f.tipo === 'entrada' ? 'Entrada' : 'Saída'}${f.dia_vencimento ? ` · Dia ${f.dia_vencimento}` : ''}</div>
+      </div>
+      <div class="fixo-valor" style="color:${f.tipo==='entrada'?'var(--color-entrada)':'var(--color-saida)'}">
+        ${f.tipo==='entrada'?'+':'−'} ${formatCurrency(f.valor)}
+      </div>
+      <button class="btn btn-ghost btn-icon btn-sm" onclick="deletarFixo('${f.id}')" title="Excluir">
+        <i class="ti ti-trash" style="font-size:15px;color:var(--text-muted)"></i>
+      </button>
+    </div>
+  `).join('');
+}
+
+async function deletarFixo(id) {
+  showConfirm('Excluir item fixo', 'Deseja excluir este item fixo?', async () => {
+    const { error } = await window.supabase
+      .from('itens_fixos').update({ ativo: false }).eq('id', id);
+    if (error) { showToast('Erro ao excluir', 'error'); return; }
+    showToast('Item fixo excluído', 'success');
+    carregarFixos();
+  });
+}
+
+// ─────────────────────────────────────────────
+// COMPETÊNCIAS
+// ─────────────────────────────────────────────
+
+async function carregarCompetencias() {
+  const { data } = await window.supabase
+    .from('competencias').select('*')
+    .eq('user_id', currentUser.id)
+    .order('ano', { ascending: false })
+    .order('mes', { ascending: false });
+
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                 'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+  // Calcula próximo mês
+  const lista     = data || [];
+  let proximoMes, proximoAno;
+
+  if (lista.length > 0) {
+    const ultimo = lista[0];
+    if (ultimo.mes === 12) { proximoMes = 1; proximoAno = ultimo.ano + 1; }
+    else { proximoMes = ultimo.mes + 1; proximoAno = ultimo.ano; }
+  } else {
+    const agora  = new Date();
+    proximoMes   = agora.getMonth() + 2 > 12 ? 1 : agora.getMonth() + 2;
+    proximoAno   = agora.getMonth() + 2 > 12 ? agora.getFullYear() + 1 : agora.getFullYear();
+  }
+
+  const labelEl = document.getElementById('proximoMesLabel');
+  if (labelEl) labelEl.textContent = `${meses[proximoMes - 1]} ${proximoAno}`;
+
+  // Lista de competências
+  const container = document.getElementById('listaCompetencias');
+  if (!container) return;
+
+  if (lista.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="padding:24px 0">
+        <div class="empty-icon"><i class="ti ti-calendar"></i></div>
+        <div class="empty-text">Nenhuma competência criada</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = lista.map(c => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:13.5px;font-weight:500;color:var(--text-primary)">${meses[c.mes-1]} ${c.ano}</div>
+        <div style="font-size:12px;color:var(--text-muted)">Competência ${c.mes.toString().padStart(2,'0')}/${c.ano}</div>
+      </div>
+      ${c.ativa ? `<span style="padding:3px 10px;background:var(--color-entrada-bg);color:var(--color-entrada);border-radius:var(--radius-full);font-size:11.5px;font-weight:500">Ativa</span>` : ''}
+    </div>
+  `).join('');
+}
+
+async function gerarProximoMes() {
+  const { data: competencias } = await window.supabase
+    .from('competencias').select('*')
+    .eq('user_id', currentUser.id)
+    .order('ano', { ascending: false })
+    .order('mes', { ascending: false });
+
+  const lista = competencias || [];
+  let novoMes, novoAno;
+
+  if (lista.length > 0) {
+    const ultimo = lista[0];
+    if (ultimo.mes === 12) { novoMes = 1; novoAno = ultimo.ano + 1; }
+    else { novoMes = ultimo.mes + 1; novoAno = ultimo.ano; }
+  } else {
+    const agora = new Date();
+    novoMes  = agora.getMonth() + 2 > 12 ? 1 : agora.getMonth() + 2;
+    novoAno  = agora.getMonth() + 2 > 12 ? agora.getFullYear() + 1 : agora.getFullYear();
+  }
+
+  // Verifica se já existe
+  const jaExiste = lista.find(c => c.mes === novoMes && c.ano === novoAno);
+  if (jaExiste) {
+    const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                   'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    showToast(`${meses[novoMes-1]} ${novoAno} já existe!`, 'warning');
+    return;
+  }
+
+  const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                 'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+  showConfirm(
+    'Gerar próximo mês',
+    `Deseja criar a competência de <strong>${meses[novoMes-1]} ${novoAno}</strong>? Os itens fixos serão importados automaticamente como lançamentos.`,
+    async () => {
+      // Cria competência
+      const { data: novaComp, error: errComp } = await window.supabase
+        .from('competencias').insert({
+          user_id: currentUser.id, mes: novoMes, ano: novoAno, ativa: false
+        }).select().single();
+
+      if (errComp) { showToast('Erro ao criar competência', 'error'); return; }
+
+      // Busca itens fixos
+      const { data: fixos } = await window.supabase
+        .from('itens_fixos').select('*')
+        .eq('user_id', currentUser.id).eq('ativo', true);
+
+      if (fixos && fixos.length > 0) {
+        const lancamentosFixos = fixos.map(f => ({
+          user_id:       currentUser.id,
+          competencia_id: novaComp.id,
+          tipo:          f.tipo,
+          descricao:     f.nome,
+          valor:         f.valor,
+          data:          `${novoAno}-${String(novoMes).padStart(2,'0')}-${String(f.dia_vencimento || 1).padStart(2,'0')}`,
+          observacao:    f.observacao,
+          pago:          false,
+          item_fixo_id:  f.id,
+        }));
+
+        await window.supabase.from('lancamentos').insert(lancamentosFixos);
+      }
+
+      showToast(`${meses[novoMes-1]} ${novoAno} criado com ${fixos?.length || 0} item(ns) fixo(s)!`, 'success');
+      carregarCompetencias();
+    }
+  );
+}

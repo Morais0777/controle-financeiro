@@ -237,35 +237,184 @@
         </div>
 
         <!-- CONFIGURAÇÕES -->
-        <div id="page-configuracoes" class="page">
-          <div class="page-header"><h2>Configurações</h2></div>
-          <div class="home-grid">
-            <div class="card">
-              <div class="card-title">Meu perfil</div>
-              <div class="form-group">
-                <label class="form-label">Nome de usuário</label>
-                <input class="form-control" id="configUsername" type="text" placeholder="Seu nome" />
-              </div>
-              <button class="btn btn-primary btn-sm" onclick="salvarPerfil()">Salvar alterações</button>
-            </div>
-            <div class="card">
-              <div class="card-title">Aparência</div>
-              <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">
-                <div>
-                  <div style="font-size:13.5px;font-weight:500;color:var(--text-primary)">Tema da interface</div>
-                  <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Claro ou escuro</div>
-                </div>
-                <button class="btn btn-secondary btn-sm" onclick="toggleTheme()">
-                  <i class="ti ti-moon"></i>Alternar tema
-                </button>
-              </div>
-            </div>
+      <div id="page-configuracoes" class="page">
+  <div class="page-header"><h2>Configurações</h2></div>
+
+  <!-- Abas internas -->
+  <div style="display:flex;gap:2px;background:var(--surface-alt);border-radius:var(--radius);padding:3px;margin-bottom:24px;width:fit-content;border:1px solid var(--border)">
+    <button class="cfg-tab active" onclick="showCfgTab('perfil')">Perfil</button>
+    <button class="cfg-tab" onclick="showCfgTab('categorias')">Categorias</button>
+    <button class="cfg-tab" onclick="showCfgTab('fixos')">Itens fixos</button>
+    <button class="cfg-tab" onclick="showCfgTab('competencias')">Competências</button>
+  </div>
+
+  <!-- ABA: PERFIL -->
+  <div id="cfg-perfil" class="cfg-panel">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card">
+        <div class="card-title">Meu perfil</div>
+        <div class="form-group">
+          <label class="form-label">Nome de usuário</label>
+          <input class="form-control" id="configUsername" type="text" placeholder="Seu nome" />
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="salvarPerfil()">
+          <i class="ti ti-check"></i>Salvar alterações
+        </button>
+      </div>
+      <div class="card">
+        <div class="card-title">Aparência</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">
+          <div>
+            <div style="font-size:13.5px;font-weight:500;color:var(--text-primary)">Tema da interface</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Claro ou escuro</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="toggleTheme()">
+            <i class="ti ti-moon"></i>Alternar tema
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA: CATEGORIAS -->
+  <div id="cfg-categorias" class="cfg-panel" style="display:none">
+    <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start">
+
+      <!-- Formulário nova categoria -->
+      <div class="card">
+        <div class="card-title">Nova categoria</div>
+        <div class="form-group">
+          <label class="form-label">Nome</label>
+          <input class="form-control" id="catNome" type="text" placeholder="Ex: Alimentação, Transporte..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo</label>
+          <select class="form-control" id="catTipo">
+            <option value="saida">Saída</option>
+            <option value="entrada">Entrada</option>
+            <option value="ambos">Ambos</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cor</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="cor-btn active" data-cor="#1a56db" style="background:#1a56db" onclick="selecionarCor(this)"></button>
+            <button class="cor-btn" data-cor="#0a7c42" style="background:#0a7c42" onclick="selecionarCor(this)"></button>
+            <button class="cor-btn" data-cor="#c0392b" style="background:#c0392b" onclick="selecionarCor(this)"></button>
+            <button class="cor-btn" data-cor="#b45309" style="background:#b45309" onclick="selecionarCor(this)"></button>
+            <button class="cor-btn" data-cor="#6d28d9" style="background:#6d28d9" onclick="selecionarCor(this)"></button>
+            <button class="cor-btn" data-cor="#0e7490" style="background:#0e7490" onclick="selecionarCor(this)"></button>
+            <button class="cor-btn" data-cor="#be185d" style="background:#be185d" onclick="selecionarCor(this)"></button>
+            <button class="cor-btn" data-cor="#374060" style="background:#374060" onclick="selecionarCor(this)"></button>
+          </div>
+          <input type="hidden" id="catCor" value="#1a56db" />
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="salvarCategoria()" style="width:100%">
+          <i class="ti ti-plus"></i>Adicionar categoria
+        </button>
+      </div>
+
+      <!-- Lista de categorias -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Suas categorias</span>
+          <span id="catCount" style="font-size:12px;color:var(--text-muted)">0 categorias</span>
+        </div>
+        <div id="listaCategorias">
+          <div class="empty-state" style="padding:32px 0">
+            <div class="empty-icon"><i class="ti ti-tags"></i></div>
+            <div class="empty-text">Nenhuma categoria ainda</div>
           </div>
         </div>
-
       </div>
-    </main>
+
+    </div>
   </div>
+
+  <!-- ABA: ITENS FIXOS -->
+  <div id="cfg-fixos" class="cfg-panel" style="display:none">
+    <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start">
+
+      <!-- Formulário novo item fixo -->
+      <div class="card">
+        <div class="card-title">Novo item fixo</div>
+        <div class="form-group">
+          <label class="form-label">Nome</label>
+          <input class="form-control" id="fixoNome" type="text" placeholder="Ex: Salário, Aluguel..." />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo</label>
+          <select class="form-control" id="fixoTipo">
+            <option value="entrada">Entrada</option>
+            <option value="saida">Saída</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Valor (R$)</label>
+          <input class="form-control" id="fixoValor" type="number" placeholder="0,00" min="0.01" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Dia do vencimento</label>
+          <input class="form-control" id="fixoDia" type="number" placeholder="Ex: 5, 10, 25..." min="1" max="31" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Observação <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label>
+          <input class="form-control" id="fixoObs" type="text" placeholder="Alguma observação..." />
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="salvarItemFixo()" style="width:100%">
+          <i class="ti ti-plus"></i>Adicionar item fixo
+        </button>
+      </div>
+
+      <!-- Lista de itens fixos -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Seus itens fixos</span>
+          <span id="fixoCount" style="font-size:12px;color:var(--text-muted)">0 itens</span>
+        </div>
+        <div id="listaFixos">
+          <div class="empty-state" style="padding:32px 0">
+            <div class="empty-icon"><i class="ti ti-refresh"></i></div>
+            <div class="empty-text">Nenhum item fixo ainda</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ABA: COMPETÊNCIAS -->
+  <div id="cfg-competencias" class="cfg-panel" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+      <div class="card">
+        <div class="card-title">Gerar próximo mês</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px;line-height:1.6">
+          Cria a competência do mês seguinte e importa automaticamente todos os seus itens fixos como lançamentos.
+        </p>
+        <div id="proximoMesInfo" style="padding:14px;background:var(--accent-bg);border-radius:var(--radius);margin-bottom:20px">
+          <div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:2px">Próximo mês</div>
+          <div style="font-size:16px;font-weight:600;color:var(--text-primary)" id="proximoMesLabel">Calculando...</div>
+        </div>
+        <button class="btn btn-primary" onclick="gerarProximoMes()" style="width:100%">
+          <i class="ti ti-calendar-plus"></i>Gerar próximo mês
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Competências criadas</div>
+        <div id="listaCompetencias">
+          <div class="empty-state" style="padding:24px 0">
+            <div class="empty-icon"><i class="ti ti-calendar"></i></div>
+            <div class="empty-text">Carregando...</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
 
   <!-- MODAL LANÇAMENTO -->
   <div id="modalLancamento" style="display:none;position:fixed;inset:0;background:rgba(15,21,40,0.5);z-index:200;align-items:center;justify-content:center;padding:16px">
