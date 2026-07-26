@@ -1,82 +1,69 @@
 // ================================================
 // AUTH.JS — Toda a lógica de autenticação
-// Login, Cadastro, Verificação, Recuperação de senha
 // ================================================
 
-// Estado temporário para o cadastro (guarda dados entre telas)
 let pendingRegisterData = null;
 
-// ==========================================
-// NAVEGAÇÃO ENTRE TELAS DE AUTH
-// ==========================================
+// Função auxiliar para montar URLs corretas
+// Funciona tanto no localhost quanto no GitHub Pages
+function getBaseUrl() {
+  const path = window.location.pathname;
+  const base = path.substring(0, path.lastIndexOf('/') + 1);
+  return window.location.origin + base;
+}
+
+// ── NAVEGAÇÃO ─────────────────────────────────
 
 function showLogin(e) {
   if (e) e.preventDefault();
-
-  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('loginForm').style.display    = 'block';
   document.getElementById('registerForm').style.display = 'none';
-  document.getElementById('verifyForm').style.display = 'none';
-  document.getElementById('forgotForm').style.display = 'none';
-  document.getElementById('authTabs').style.display = 'flex';
-
+  document.getElementById('verifyForm').style.display   = 'none';
+  document.getElementById('forgotForm').style.display   = 'none';
+  document.getElementById('authTabs').style.display     = 'flex';
   document.getElementById('tabLogin').classList.add('active');
   document.getElementById('tabRegister').classList.remove('active');
-
-  document.getElementById('authTitle').textContent = 'Bem-vindo!';
-  document.getElementById('authSubtitle').textContent =
-    'Faça login para acessar seu painel financeiro';
+  document.getElementById('authTitle').textContent    = 'Bem-vindo de volta';
+  document.getElementById('authSubtitle').textContent = 'Entre na sua conta para continuar';
 }
 
 function showRegister(e) {
   if (e) e.preventDefault();
-
-  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('loginForm').style.display    = 'none';
   document.getElementById('registerForm').style.display = 'block';
-  document.getElementById('verifyForm').style.display = 'none';
-  document.getElementById('forgotForm').style.display = 'none';
-  document.getElementById('authTabs').style.display = 'flex';
-
+  document.getElementById('verifyForm').style.display   = 'none';
+  document.getElementById('forgotForm').style.display   = 'none';
+  document.getElementById('authTabs').style.display     = 'flex';
   document.getElementById('tabRegister').classList.add('active');
   document.getElementById('tabLogin').classList.remove('active');
-
-  document.getElementById('authTitle').textContent = 'Criar conta';
-  document.getElementById('authSubtitle').textContent =
-    'Preencha os dados abaixo para começar';
+  document.getElementById('authTitle').textContent    = 'Criar conta';
+  document.getElementById('authSubtitle').textContent = 'Preencha os dados abaixo para começar';
 }
 
 function showVerify(email) {
-  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('loginForm').style.display    = 'none';
   document.getElementById('registerForm').style.display = 'none';
-  document.getElementById('verifyForm').style.display = 'block';
-  document.getElementById('forgotForm').style.display = 'none';
-  document.getElementById('authTabs').style.display = 'none';
-
-  document.getElementById('authTitle').textContent = 'Verificar e-mail';
-  document.getElementById('authSubtitle').textContent =
-    'Insira o código de 6 dígitos que enviamos';
-  document.getElementById('verifyEmail').textContent = email;
-
-  // Foca no primeiro campo do código
+  document.getElementById('verifyForm').style.display   = 'block';
+  document.getElementById('forgotForm').style.display   = 'none';
+  document.getElementById('authTabs').style.display     = 'none';
+  document.getElementById('authTitle').textContent      = 'Verificar e-mail';
+  document.getElementById('authSubtitle').textContent   = 'Insira o código de 6 dígitos que enviamos';
+  document.getElementById('verifyEmail').textContent    = email;
   setTimeout(() => document.getElementById('code0').focus(), 100);
 }
 
 function showForgotPassword(e) {
   if (e) e.preventDefault();
-
-  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('loginForm').style.display    = 'none';
   document.getElementById('registerForm').style.display = 'none';
-  document.getElementById('verifyForm').style.display = 'none';
-  document.getElementById('forgotForm').style.display = 'block';
-  document.getElementById('authTabs').style.display = 'none';
-
-  document.getElementById('authTitle').textContent = 'Recuperar senha';
-  document.getElementById('authSubtitle').textContent =
-    'Vamos te ajudar a voltar para o sistema';
+  document.getElementById('verifyForm').style.display   = 'none';
+  document.getElementById('forgotForm').style.display   = 'block';
+  document.getElementById('authTabs').style.display     = 'none';
+  document.getElementById('authTitle').textContent      = 'Recuperar senha';
+  document.getElementById('authSubtitle').textContent   = 'Vamos te ajudar a voltar para o sistema';
 }
 
-// ==========================================
-// LOGIN
-// ==========================================
+// ── LOGIN ─────────────────────────────────────
 
 async function handleLogin(event) {
   event.preventDefault();
@@ -85,7 +72,6 @@ async function handleLogin(event) {
   const email    = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
 
-  // Validações
   let hasError = false;
   if (!isValidEmail(email)) {
     showFieldError('loginEmail', 'loginEmailError', 'E-mail inválido');
@@ -100,22 +86,21 @@ async function handleLogin(event) {
   setLoading('loginBtn', 'loginSpinner', 'loginBtnText', true);
 
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await window.supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      // Traduz mensagens de erro do Supabase para português
       const msg = translateAuthError(error.message);
       showToast(msg, 'error');
       if (error.message.includes('Email not confirmed')) {
-        showToast('Confirme seu e-mail antes de entrar', 'warning');
         showVerify(email);
       }
       return;
     }
 
-    // Login bem-sucedido
     showToast('Login realizado! Redirecionando...', 'success');
-    setTimeout(() => { window.location.href = 'app.html'; }, 1200);
+    setTimeout(() => {
+      window.location.href = getBaseUrl() + 'app.html';
+    }, 1000);
 
   } catch (err) {
     showToast('Erro inesperado. Tente novamente.', 'error');
@@ -125,9 +110,7 @@ async function handleLogin(event) {
   }
 }
 
-// ==========================================
-// CADASTRO
-// ==========================================
+// ── CADASTRO ──────────────────────────────────
 
 async function handleRegister(event) {
   event.preventDefault();
@@ -138,9 +121,7 @@ async function handleRegister(event) {
   const password  = document.getElementById('regPassword').value;
   const password2 = document.getElementById('regPasswordConfirm').value;
 
-  // Validações
   let hasError = false;
-
   if (username.length < 3) {
     showFieldError('regUsername', 'regUsernameError', 'Mínimo 3 caracteres');
     hasError = true;
@@ -162,27 +143,21 @@ async function handleRegister(event) {
   setLoading('registerBtn', 'registerSpinner', 'registerBtnText', true);
 
   try {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await window.supabase.auth.signUp({
       email,
       password,
       options: {
-        // Passa o username para o trigger do banco de dados
         data: { username },
-        // URL para redirecionar após confirmação (ajuste para seu domínio)
-        emailRedirectTo: window.location.origin + '/index.html'
+        emailRedirectTo: getBaseUrl() + 'index.html'
       }
     });
 
     if (error) {
-      const msg = translateAuthError(error.message);
-      showToast(msg, 'error');
+      showToast(translateAuthError(error.message), 'error');
       return;
     }
 
-    // Salva dados para usar na tela de verificação
     pendingRegisterData = { username, email, password };
-
-    // O Supabase envia o e-mail de confirmação automaticamente
     showToast('Código enviado para o seu e-mail!', 'success');
     showVerify(email);
 
@@ -194,12 +169,9 @@ async function handleRegister(event) {
   }
 }
 
-// ==========================================
-// VERIFICAÇÃO DE CÓDIGO
-// ==========================================
+// ── VERIFICAÇÃO DE CÓDIGO ─────────────────────
 
 async function handleVerifyCode() {
-  // Junta os 6 dígitos
   const code = Array.from({ length: 6 }, (_, i) =>
     document.getElementById(`code${i}`).value
   ).join('');
@@ -209,30 +181,27 @@ async function handleVerifyCode() {
     return;
   }
 
-  setLoading(null, 'verifySpinner', 'verifyBtnText', true);
+  document.getElementById('verifySpinner').classList.add('visible');
+  document.getElementById('verifyBtnText').style.opacity = '0.6';
 
   try {
     const email = document.getElementById('verifyEmail').textContent;
 
-    const { data, error } = await supabase.auth.verifyOtp({
-      email,
-      token: code,
-      type: 'signup'  // 'email_change' para troca de e-mail, 'recovery' para recuperação
+    const { data, error } = await window.supabase.auth.verifyOtp({
+      email, token: code, type: 'signup'
     });
 
     if (error) {
       showToast('Código inválido ou expirado. Tente novamente.', 'error');
-      // Limpa os campos
       for (let i = 0; i < 6; i++) document.getElementById(`code${i}`).value = '';
       document.getElementById('code0').focus();
       return;
     }
 
-    // Verificado com sucesso!
-    showToast('E-mail confirmado! Bem-vindo ao FinanceIQ! 🎉', 'success');
-
-    // Aguarda um momento e redireciona para o app
-    setTimeout(() => { window.location.href = 'app.html'; }, 1500);
+    showToast('E-mail confirmado! Bem-vindo ao FinanceIQ!', 'success');
+    setTimeout(() => {
+      window.location.href = getBaseUrl() + 'app.html';
+    }, 1500);
 
   } catch (err) {
     showToast('Erro ao verificar código.', 'error');
@@ -243,47 +212,43 @@ async function handleVerifyCode() {
   }
 }
 
-// ==========================================
-// REENVIAR CÓDIGO
-// ==========================================
+// ── REENVIAR CÓDIGO ───────────────────────────
 
 async function resendCode() {
   const email = document.getElementById('verifyEmail').textContent;
   const btn   = document.getElementById('resendBtn');
 
-  btn.disabled = true;
+  btn.disabled    = true;
   btn.textContent = 'Enviando...';
 
   try {
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email,
-    });
+    const { error } = await window.supabase.auth.resend({ type: 'signup', email });
 
     if (error) {
       showToast('Erro ao reenviar. Aguarde e tente novamente.', 'error');
+      btn.disabled    = false;
+      btn.textContent = 'Reenviar código';
     } else {
       showToast('Código reenviado! Verifique seu e-mail.', 'success');
-      // Bloqueia o botão por 60 segundos
       let seconds = 60;
       const interval = setInterval(() => {
         seconds--;
         btn.textContent = `Reenviar em ${seconds}s`;
         if (seconds <= 0) {
           clearInterval(interval);
-          btn.disabled = false;
+          btn.disabled    = false;
           btn.textContent = 'Reenviar código';
         }
       }, 1000);
     }
   } catch (err) {
     showToast('Erro ao reenviar código.', 'error');
+    btn.disabled    = false;
+    btn.textContent = 'Reenviar código';
   }
 }
 
-// ==========================================
-// RECUPERAÇÃO DE SENHA
-// ==========================================
+// ── RECUPERAÇÃO DE SENHA ──────────────────────
 
 async function handleForgotPassword() {
   const email = document.getElementById('forgotEmail').value.trim();
@@ -294,11 +259,12 @@ async function handleForgotPassword() {
     return;
   }
 
-  setLoading(null, 'forgotSpinner', 'forgotBtnText', true);
+  document.getElementById('forgotSpinner').classList.add('visible');
+  document.getElementById('forgotBtnText').style.opacity = '0.6';
 
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + '/index.html?reset=true'
+    const { error } = await window.supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: getBaseUrl() + 'index.html?reset=true'
     });
 
     if (error) {
@@ -315,32 +281,27 @@ async function handleForgotPassword() {
   }
 }
 
-// ==========================================
-// TRADUÇÃO DE ERROS DO SUPABASE
-// ==========================================
+// ── TRADUÇÃO DE ERROS ─────────────────────────
 
 function translateAuthError(message) {
-  const translations = {
-    'Invalid login credentials':           'E-mail ou senha incorretos',
-    'Email not confirmed':                 'E-mail ainda não confirmado',
-    'User already registered':             'Este e-mail já está cadastrado',
+  const t = {
+    'Invalid login credentials':                'E-mail ou senha incorretos',
+    'Email not confirmed':                      'E-mail ainda não confirmado',
+    'User already registered':                  'Este e-mail já está cadastrado',
     'Password should be at least 6 characters': 'A senha deve ter pelo menos 6 caracteres',
-    'Unable to validate email address':    'E-mail inválido',
-    'Email rate limit exceeded':           'Muitas tentativas. Aguarde um pouco.',
-    'Invalid OTP':                         'Código inválido',
-    'Token has expired or is invalid':     'Código expirado. Solicite um novo.',
+    'Unable to validate email address':         'E-mail inválido',
+    'Email rate limit exceeded':                'Muitas tentativas. Aguarde um pouco.',
+    'Invalid OTP':                              'Código inválido',
+    'Token has expired or is invalid':          'Código expirado. Solicite um novo.',
   };
-  return translations[message] || message;
+  return t[message] || message;
 }
 
-// ==========================================
-// VERIFICAR SE JÁ ESTÁ LOGADO AO ABRIR
-// ==========================================
+// ── VERIFICAR SESSÃO AO CARREGAR ──────────────
 
 document.addEventListener('DOMContentLoaded', async () => {
-  // Se já tem sessão ativa, vai direto pro app
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await window.supabase.auth.getSession();
   if (session) {
-    window.location.href = 'app.html';
+    window.location.href = getBaseUrl() + 'app.html';
   }
 });
