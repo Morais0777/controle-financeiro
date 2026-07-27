@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR" data-theme="light">
 <head>
@@ -31,7 +32,6 @@
         <div class="sidebar-logo-mark"><i class="ti ti-chart-pie"></i></div>
         <span class="sidebar-logo-text">FinanceIQ</span>
       </div>
-
       <div class="sidebar-section">Principal</div>
       <div class="sidebar-nav">
         <div class="nav-item active" data-page="home" onclick="navigateTo('home')">
@@ -47,14 +47,12 @@
           <i class="ti ti-file-text"></i><span>Relatórios</span>
         </div>
       </div>
-
       <div class="sidebar-section">Sistema</div>
       <div class="sidebar-nav">
         <div class="nav-item" data-page="configuracoes" onclick="navigateTo('configuracoes')">
           <i class="ti ti-settings"></i><span>Configurações</span>
         </div>
       </div>
-
       <div class="sidebar-footer">
         <div style="display:flex;align-items:center;gap:8px">
           <div class="sidebar-user" style="flex:1" onclick="navigateTo('configuracoes')">
@@ -78,9 +76,16 @@
           <i class="ti ti-menu-2"></i>
         </button>
         <span class="topbar-title" id="topbarTitle">Início</span>
-        <div class="topbar-badge" id="competenciaBadge">
-          <i class="ti ti-calendar"></i>
-          <span>Julho 2026</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="topbar-badge" id="competenciaBadge" style="cursor:default">
+            <i class="ti ti-calendar"></i>
+            <span>Julho 2026</span>
+          </div>
+          <select id="seletorCompetencia" onchange="mudarCompetencia(this.value)"
+            style="padding:5px 10px;border-radius:var(--radius);border:1px solid var(--border);
+            background:var(--surface);color:var(--text-primary);font-size:12px;
+            font-family:var(--font);cursor:pointer;max-width:130px">
+          </select>
         </div>
         <button class="topbar-btn" onclick="toggleTheme()" id="themeToggle" title="Alternar tema">
           <i class="ti ti-moon"></i>
@@ -93,11 +98,10 @@
         <div id="page-home" class="page active">
           <div class="home-greeting">
             <div>
-              <h1 class="greeting-title" id="greetingTitle">Olá, Maycon</h1>
+              <h1 class="greeting-title" id="greetingTitle">Olá</h1>
               <p class="greeting-sub" id="greetingSub">Resumo financeiro de hoje</p>
             </div>
           </div>
-
           <div class="kpi-grid">
             <div class="kpi-card">
               <div class="kpi-label"><i class="ti ti-wallet"></i>Saldo do mês</div>
@@ -130,7 +134,6 @@
               <div class="kpi-trend">Fundo de emergência</div>
             </div>
           </div>
-
           <div class="section-title">Ações rápidas</div>
           <div class="quick-actions">
             <button class="quick-btn btn-entrada" onclick="openLancamento('entrada')">
@@ -152,7 +155,6 @@
               <i class="ti ti-shield-check"></i>Reserva
             </button>
           </div>
-
           <div class="home-grid">
             <div class="card">
               <div class="card-header">
@@ -198,273 +200,286 @@
           <div class="page-header"><h2>Dashboard</h2></div>
           <div class="kpi-grid" style="margin-bottom:24px">
             <div class="kpi-card">
-              <div class="kpi-label"><i class="ti ti-trending-up"></i>Total entradas</div>
+              <div class="kpi-label"><i class="ti ti-trending-up"></i>Entradas</div>
               <div class="kpi-value" id="dashEntradas">R$ 0,00</div>
             </div>
             <div class="kpi-card">
-              <div class="kpi-label"><i class="ti ti-trending-down"></i>Total saídas</div>
+              <div class="kpi-label"><i class="ti ti-trending-down"></i>Saídas</div>
               <div class="kpi-value" id="dashSaidas">R$ 0,00</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-label"><i class="ti ti-wallet"></i>Saldo</div>
               <div class="kpi-value" id="dashSaldo">R$ 0,00</div>
             </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><i class="ti ti-credit-card"></i>Cartão</div>
+              <div class="kpi-value" id="dashCartao">R$ 0,00</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><i class="ti ti-building-bank"></i>Investimentos</div>
+              <div class="kpi-value" id="dashInvestimentos">R$ 0,00</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><i class="ti ti-handshake"></i>Empréstimos</div>
+              <div class="kpi-value" id="dashEmprestimos">R$ 0,00</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-label"><i class="ti ti-shield-check"></i>Reserva</div>
+              <div class="kpi-value" id="dashReserva">R$ 0,00</div>
+            </div>
           </div>
           <div class="home-grid">
             <div class="card">
-              <div class="card-header"><span class="card-title">Visão mensal</span></div>
+              <div class="card-header"><span class="card-title">Todos os tipos</span></div>
               <div class="chart-wrapper"><canvas id="chartDashMensal"></canvas></div>
             </div>
             <div class="card">
-              <div class="card-header"><span class="card-title">Por categoria</span></div>
+              <div class="card-header"><span class="card-title">Distribuição</span></div>
               <div class="chart-wrapper"><canvas id="chartDashCategoria"></canvas></div>
             </div>
           </div>
         </div>
 
-<!-- RELATÓRIOS -->
-<div id="page-relatorios" class="page">
-  <div class="page-header"><h2>Relatórios</h2></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:800px">
-
-    <div class="card">
-      <div style="width:44px;height:44px;background:var(--accent-bg);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:16px">
-        <i class="ti ti-file-text" style="font-size:22px;color:var(--accent)"></i>
-      </div>
-      <div class="card-title">Relatório mensal em PDF</div>
-      <p style="color:var(--text-secondary);font-size:13px;margin-bottom:20px;line-height:1.6">
-        Gera um PDF profissional com todos os lançamentos do mês atual, totalizadores por tipo e saldo final.
-      </p>
-      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
-        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-          <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>
-          Todos os lançamentos do mês
+        <!-- RELATÓRIOS -->
+        <div id="page-relatorios" class="page">
+          <div class="page-header"><h2>Relatórios</h2></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:800px">
+            <div class="card">
+              <div style="width:44px;height:44px;background:var(--accent-bg);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+                <i class="ti ti-file-text" style="font-size:22px;color:var(--accent)"></i>
+              </div>
+              <div class="card-title">Relatório mensal em PDF</div>
+              <p style="color:var(--text-secondary);font-size:13px;margin-bottom:20px;line-height:1.6">
+                Gera um PDF profissional com todos os lançamentos da competência selecionada.
+              </p>
+              <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
+                  <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>Todos os lançamentos do mês
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
+                  <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>Totais por tipo
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
+                  <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>Saldo final do período
+                </div>
+              </div>
+              <button class="btn btn-primary" onclick="gerarRelatorio()" style="width:100%">
+                <i class="ti ti-download"></i>Baixar PDF
+              </button>
+            </div>
+            <div class="card" style="background:var(--surface-alt);border-style:dashed">
+              <div style="width:44px;height:44px;background:var(--border);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+                <i class="ti ti-chart-bar" style="font-size:22px;color:var(--text-muted)"></i>
+              </div>
+              <div style="font-size:14px;font-weight:600;color:var(--text-secondary);margin-bottom:8px">Relatório por período</div>
+              <p style="color:var(--text-muted);font-size:13px;line-height:1.6">Múltiplos meses em um único relatório.</p>
+              <div style="margin-top:20px;padding:10px 14px;background:var(--accent-bg);border-radius:var(--radius);font-size:12px;color:var(--accent);font-weight:500;display:flex;align-items:center;gap:6px">
+                <i class="ti ti-clock" style="font-size:14px"></i>Em breve
+              </div>
+            </div>
+          </div>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-          <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>
-          Totais por tipo (entradas, saídas, etc.)
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-          <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>
-          Saldo final do período
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-          <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>
-          Layout profissional com cabeçalho
-        </div>
-      </div>
-      <button class="btn btn-primary" onclick="gerarRelatorio()" style="width:100%">
-        <i class="ti ti-download"></i>Baixar PDF do mês atual
-      </button>
-    </div>
-
-    <div class="card" style="background:var(--surface-alt);border-style:dashed">
-      <div style="width:44px;height:44px;background:var(--border);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:16px">
-        <i class="ti ti-chart-bar" style="font-size:22px;color:var(--text-muted)"></i>
-      </div>
-      <div style="font-size:14px;font-weight:600;color:var(--text-secondary);margin-bottom:8px">Relatório por período</div>
-      <p style="color:var(--text-muted);font-size:13px;line-height:1.6">
-        Selecione um intervalo de datas e exporte os dados de múltiplos meses em um único relatório.
-      </p>
-      <div style="margin-top:20px;padding:10px 14px;background:var(--accent-bg);border-radius:var(--radius);font-size:12px;color:var(--accent);font-weight:500;display:flex;align-items:center;gap:6px">
-        <i class="ti ti-clock" style="font-size:14px"></i>
-        Em breve
-      </div>
-    </div>
-
-  </div>
-</div>
 
         <!-- CONFIGURAÇÕES -->
-      <div id="page-configuracoes" class="page">
-  <div class="page-header"><h2>Configurações</h2></div>
-
-  <!-- Abas internas -->
-  <div style="display:flex;gap:2px;background:var(--surface-alt);border-radius:var(--radius);padding:3px;margin-bottom:24px;width:fit-content;border:1px solid var(--border)">
-    <button class="cfg-tab active" onclick="showCfgTab('perfil')">Perfil</button>
-    <button class="cfg-tab" onclick="showCfgTab('categorias')">Categorias</button>
-    <button class="cfg-tab" onclick="showCfgTab('fixos')">Itens fixos</button>
-    <button class="cfg-tab" onclick="showCfgTab('competencias')">Competências</button>
-  </div>
-
-  <!-- ABA: PERFIL -->
-  <div id="cfg-perfil" class="cfg-panel">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-      <div class="card">
-        <div class="card-title">Meu perfil</div>
-        <div class="form-group">
-          <label class="form-label">Nome de usuário</label>
-          <input class="form-control" id="configUsername" type="text" placeholder="Seu nome" />
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="salvarPerfil()">
-          <i class="ti ti-check"></i>Salvar alterações
-        </button>
-      </div>
-      <div class="card">
-        <div class="card-title">Aparência</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">
-          <div>
-            <div style="font-size:13.5px;font-weight:500;color:var(--text-primary)">Tema da interface</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Claro ou escuro</div>
+        <div id="page-configuracoes" class="page">
+          <div class="page-header"><h2>Configurações</h2></div>
+          <div style="display:flex;gap:2px;background:var(--surface-alt);border-radius:var(--radius);padding:3px;margin-bottom:24px;width:fit-content;border:1px solid var(--border)">
+            <button class="cfg-tab active" onclick="showCfgTab('perfil')">Perfil</button>
+            <button class="cfg-tab" onclick="showCfgTab('categorias')">Categorias</button>
+            <button class="cfg-tab" onclick="showCfgTab('fixos')">Itens fixos</button>
+            <button class="cfg-tab" onclick="showCfgTab('competencias')">Competências</button>
           </div>
-          <button class="btn btn-secondary btn-sm" onclick="toggleTheme()">
-            <i class="ti ti-moon"></i>Alternar tema
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- ABA: CATEGORIAS -->
-  <div id="cfg-categorias" class="cfg-panel" style="display:none">
-    <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start">
-
-      <!-- Formulário nova categoria -->
-      <div class="card">
-        <div class="card-title">Nova categoria</div>
-        <div class="form-group">
-          <label class="form-label">Nome</label>
-          <input class="form-control" id="catNome" type="text" placeholder="Ex: Alimentação, Transporte..." />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Tipo</label>
-          <select class="form-control" id="catTipo">
-            <option value="saida">Saída</option>
-            <option value="entrada">Entrada</option>
-            <option value="ambos">Ambos</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Cor</label>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="cor-btn active" data-cor="#1a56db" style="background:#1a56db" onclick="selecionarCor(this)"></button>
-            <button class="cor-btn" data-cor="#0a7c42" style="background:#0a7c42" onclick="selecionarCor(this)"></button>
-            <button class="cor-btn" data-cor="#c0392b" style="background:#c0392b" onclick="selecionarCor(this)"></button>
-            <button class="cor-btn" data-cor="#b45309" style="background:#b45309" onclick="selecionarCor(this)"></button>
-            <button class="cor-btn" data-cor="#6d28d9" style="background:#6d28d9" onclick="selecionarCor(this)"></button>
-            <button class="cor-btn" data-cor="#0e7490" style="background:#0e7490" onclick="selecionarCor(this)"></button>
-            <button class="cor-btn" data-cor="#be185d" style="background:#be185d" onclick="selecionarCor(this)"></button>
-            <button class="cor-btn" data-cor="#374060" style="background:#374060" onclick="selecionarCor(this)"></button>
+          <!-- ABA PERFIL -->
+          <div id="cfg-perfil" class="cfg-panel">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div class="card">
+                <div class="card-title">Meu perfil</div>
+                <div class="form-group">
+                  <label class="form-label">Nome de usuário</label>
+                  <input class="form-control" id="configUsername" type="text" placeholder="Seu nome" />
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="salvarPerfil()">
+                  <i class="ti ti-check"></i>Salvar alterações
+                </button>
+              </div>
+              <div class="card">
+                <div class="card-title">Aparência</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">
+                  <div>
+                    <div style="font-size:13.5px;font-weight:500;color:var(--text-primary)">Tema da interface</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Claro ou escuro</div>
+                  </div>
+                  <button class="btn btn-secondary btn-sm" onclick="toggleTheme()">
+                    <i class="ti ti-moon"></i>Alternar tema
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-          <input type="hidden" id="catCor" value="#1a56db" />
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="salvarCategoria()" style="width:100%">
-          <i class="ti ti-plus"></i>Adicionar categoria
-        </button>
-      </div>
 
-      <!-- Lista de categorias -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Suas categorias</span>
-          <span id="catCount" style="font-size:12px;color:var(--text-muted)">0 categorias</span>
-        </div>
-        <div id="listaCategorias">
-          <div class="empty-state" style="padding:32px 0">
-            <div class="empty-icon"><i class="ti ti-tags"></i></div>
-            <div class="empty-text">Nenhuma categoria ainda</div>
+          <!-- ABA CATEGORIAS -->
+          <div id="cfg-categorias" class="cfg-panel" style="display:none">
+            <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start">
+              <div class="card">
+                <div class="card-title">Nova categoria</div>
+                <div class="form-group">
+                  <label class="form-label">Nome</label>
+                  <input class="form-control" id="catNome" type="text" placeholder="Ex: Alimentação, Transporte..." />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tipo</label>
+                  <select class="form-control" id="catTipo">
+                    <option value="saida">Saída</option>
+                    <option value="entrada">Entrada</option>
+                    <option value="ambos">Ambos</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Cor</label>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button class="cor-btn active" data-cor="#1a56db" style="background:#1a56db" onclick="selecionarCor(this)"></button>
+                    <button class="cor-btn" data-cor="#0a7c42" style="background:#0a7c42" onclick="selecionarCor(this)"></button>
+                    <button class="cor-btn" data-cor="#c0392b" style="background:#c0392b" onclick="selecionarCor(this)"></button>
+                    <button class="cor-btn" data-cor="#b45309" style="background:#b45309" onclick="selecionarCor(this)"></button>
+                    <button class="cor-btn" data-cor="#6d28d9" style="background:#6d28d9" onclick="selecionarCor(this)"></button>
+                    <button class="cor-btn" data-cor="#0e7490" style="background:#0e7490" onclick="selecionarCor(this)"></button>
+                    <button class="cor-btn" data-cor="#be185d" style="background:#be185d" onclick="selecionarCor(this)"></button>
+                    <button class="cor-btn" data-cor="#374060" style="background:#374060" onclick="selecionarCor(this)"></button>
+                  </div>
+                  <input type="hidden" id="catCor" value="#1a56db" />
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="salvarCategoria()" style="width:100%">
+                  <i class="ti ti-plus"></i>Adicionar categoria
+                </button>
+              </div>
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Suas categorias</span>
+                  <span id="catCount" style="font-size:12px;color:var(--text-muted)">0 categorias</span>
+                </div>
+                <div id="listaCategorias">
+                  <div class="empty-state" style="padding:32px 0">
+                    <div class="empty-icon"><i class="ti ti-tags"></i></div>
+                    <div class="empty-text">Nenhuma categoria ainda</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-    </div>
-  </div>
-
-  <!-- ABA: ITENS FIXOS -->
-  <div id="cfg-fixos" class="cfg-panel" style="display:none">
-    <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start">
-
-      <!-- Formulário novo item fixo -->
-      <div class="card">
-        <div class="card-title">Novo item fixo</div>
-        <div class="form-group">
-          <label class="form-label">Nome</label>
-          <input class="form-control" id="fixoNome" type="text" placeholder="Ex: Salário, Aluguel..." />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Tipo</label>
-          <select class="form-control" id="fixoTipo">
-            <option value="entrada">Entrada</option>
-            <option value="saida">Saída</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Valor (R$)</label>
-          <input class="form-control" id="fixoValor" type="number" placeholder="0,00" min="0.01" step="0.01" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Dia do vencimento</label>
-          <input class="form-control" id="fixoDia" type="number" placeholder="Ex: 5, 10, 25..." min="1" max="31" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">Observação <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label>
-          <input class="form-control" id="fixoObs" type="text" placeholder="Alguma observação..." />
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="salvarItemFixo()" style="width:100%">
-          <i class="ti ti-plus"></i>Adicionar item fixo
-        </button>
-      </div>
-
-      <!-- Lista de itens fixos -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Seus itens fixos</span>
-          <span id="fixoCount" style="font-size:12px;color:var(--text-muted)">0 itens</span>
-        </div>
-        <div id="listaFixos">
-          <div class="empty-state" style="padding:32px 0">
-            <div class="empty-icon"><i class="ti ti-refresh"></i></div>
-            <div class="empty-text">Nenhum item fixo ainda</div>
+          <!-- ABA ITENS FIXOS -->
+          <div id="cfg-fixos" class="cfg-panel" style="display:none">
+            <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start">
+              <div class="card">
+                <div class="card-title">Novo item fixo</div>
+                <div class="form-group">
+                  <label class="form-label">Nome</label>
+                  <input class="form-control" id="fixoNome" type="text" placeholder="Ex: Salário, Aluguel..." />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tipo</label>
+                  <select class="form-control" id="fixoTipo">
+                    <option value="entrada">Entrada</option>
+                    <option value="saida">Saída</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Valor (R$)</label>
+                  <input class="form-control" id="fixoValor" type="number" placeholder="0,00" min="0.01" step="0.01" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Dia do vencimento</label>
+                  <input class="form-control" id="fixoDia" type="number" placeholder="Ex: 5, 10, 25..." min="1" max="31" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Observação <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label>
+                  <input class="form-control" id="fixoObs" type="text" placeholder="Alguma observação..." />
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="salvarItemFixo()" style="width:100%">
+                  <i class="ti ti-plus"></i>Adicionar item fixo
+                </button>
+              </div>
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">Seus itens fixos</span>
+                  <span id="fixoCount" style="font-size:12px;color:var(--text-muted)">0 itens</span>
+                </div>
+                <div id="listaFixos">
+                  <div class="empty-state" style="padding:32px 0">
+                    <div class="empty-icon"><i class="ti ti-refresh"></i></div>
+                    <div class="empty-text">Nenhum item fixo ainda</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-    </div>
-  </div>
-
-  <!-- ABA: COMPETÊNCIAS -->
-  <div id="cfg-competencias" class="cfg-panel" style="display:none">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-
-      <div class="card">
-        <div class="card-title">Gerar próximo mês</div>
-        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px;line-height:1.6">
-          Cria a competência do mês seguinte e importa automaticamente todos os seus itens fixos como lançamentos.
-        </p>
-        <div id="proximoMesInfo" style="padding:14px;background:var(--accent-bg);border-radius:var(--radius);margin-bottom:20px">
-          <div style="font-size:12px;color:var(--accent);font-weight:600;margin-bottom:2px">Próximo mês</div>
-          <div style="font-size:16px;font-weight:600;color:var(--text-primary)" id="proximoMesLabel">Calculando...</div>
-        </div>
-        <button class="btn btn-primary" onclick="gerarProximoMes()" style="width:100%">
-          <i class="ti ti-calendar-plus"></i>Gerar próximo mês
-        </button>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Competências criadas</div>
-        <div id="listaCompetencias">
-          <div class="empty-state" style="padding:24px 0">
-            <div class="empty-icon"><i class="ti ti-calendar"></i></div>
-            <div class="empty-text">Carregando...</div>
+          <!-- ABA COMPETÊNCIAS -->
+          <div id="cfg-competencias" class="cfg-panel" style="display:none">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div class="card">
+                <div class="card-title">Criar competências retroativas</div>
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6">
+                  Informe o mês/ano de início e o sistema criará todas as competências até o mês atual automaticamente.
+                </p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+                  <div class="form-group" style="margin-bottom:0">
+                    <label class="form-label">Mês início</label>
+                    <select class="form-control" id="retroMes">
+                      <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+                      <option value="3">Março</option><option value="4">Abril</option>
+                      <option value="5">Maio</option><option value="6">Junho</option>
+                      <option value="7">Julho</option><option value="8">Agosto</option>
+                      <option value="9">Setembro</option><option value="10">Outubro</option>
+                      <option value="11">Novembro</option><option value="12">Dezembro</option>
+                    </select>
+                  </div>
+                  <div class="form-group" style="margin-bottom:0">
+                    <label class="form-label">Ano início</label>
+                    <input class="form-control" id="retroAno" type="number" placeholder="2024" min="2000" max="2099" />
+                  </div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="criarCompetenciasRetroativas()" style="width:100%">
+                  <i class="ti ti-calendar-plus"></i>Criar competências
+                </button>
+              </div>
+              <div class="card">
+                <div class="card-title">Gerar próximo mês com itens fixos</div>
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6">
+                  Cria o próximo mês e importa automaticamente todos os itens fixos como lançamentos.
+                </p>
+                <div style="padding:12px;background:var(--accent-bg);border-radius:var(--radius);margin-bottom:16px">
+                  <div style="font-size:11px;color:var(--accent);font-weight:600;margin-bottom:2px">Próximo mês</div>
+                  <div style="font-size:15px;font-weight:600;color:var(--text-primary)" id="proximoMesLabel">Calculando...</div>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="gerarProximoMesComFixos()" style="width:100%">
+                  <i class="ti ti-calendar-plus"></i>Gerar próximo mês
+                </button>
+              </div>
+            </div>
+            <div class="card" style="margin-top:16px">
+              <div class="card-header">
+                <span class="card-title">Competências criadas</span>
+                <span style="font-size:12px;color:var(--text-muted)" id="compCount"></span>
+              </div>
+              <div id="listaCompetencias"></div>
+            </div>
           </div>
-        </div>
-      </div>
 
-    </div>
-  </div>
+        </div><!-- fim page-configuracoes -->
 
-</div>
+      </div><!-- fim page-container -->
+    </main>
+  </div><!-- fim appLayout -->
 
   <!-- MODAL LANÇAMENTO -->
   <div id="modalLancamento" style="display:none;position:fixed;inset:0;background:rgba(15,21,40,0.5);z-index:200;align-items:center;justify-content:center;padding:16px">
-    <div style="background:var(--surface);border-radius:var(--radius-xl);padding:28px;width:100%;max-width:480px;border:1px solid var(--border);max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-md)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px">
+    <div style="background:var(--surface);border-radius:var(--radius-xl);padding:28px;width:100%;max-width:500px;border:1px solid var(--border);max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-md)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
         <h3 style="font-size:16px;font-weight:600" id="modalTitle">Novo lançamento</h3>
-        <button onclick="closeModal()" style="color:var(--text-muted);font-size:22px;display:flex;padding:2px;border-radius:var(--radius-sm);transition:color var(--transition)" class="btn-ghost btn-icon">
-          <i class="ti ti-x"></i>
-        </button>
+        <button onclick="closeModal()" class="btn btn-ghost btn-icon"><i class="ti ti-x"></i></button>
       </div>
-
       <div class="form-group">
         <label class="form-label">Tipo</label>
         <select class="form-control" id="lancTipo">
@@ -476,6 +491,8 @@
           <option value="reserva">Reserva financeira</option>
         </select>
       </div>
+      <!-- Sugestões de itens fixos -->
+      <div id="sugestoesFixos" style="display:none;margin-bottom:16px;padding:12px;background:var(--surface-alt);border-radius:var(--radius);border:1px solid var(--border)"></div>
       <div class="form-group">
         <label class="form-label">Descrição</label>
         <input class="form-control" id="lancDescricao" type="text" placeholder="Ex: Salário, Aluguel, Mercado..." />
@@ -492,7 +509,6 @@
         <label class="form-label">Observação <span style="color:var(--text-muted);font-weight:400">(opcional)</span></label>
         <input class="form-control" id="lancObservacao" type="text" placeholder="Alguma observação..." />
       </div>
-
       <div style="display:flex;gap:10px;margin-top:4px">
         <button onclick="closeModal()" class="btn btn-secondary" style="flex:1">Cancelar</button>
         <button onclick="salvarLancamento()" class="btn btn-primary" style="flex:2">
