@@ -311,31 +311,37 @@ function renderTabelaLancamentos() {
       </div>
     ` : `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
-        <div style="display:grid;grid-template-columns:110px 1fr 90px 120px 72px;gap:8px;padding:10px 14px;background:var(--surface-alt);border-bottom:1px solid var(--border)">
-          ${['Tipo','Descrição','Data','Valor',''].map(h=>
-            `<div style="font-size:11.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em${h==='Valor'?';text-align:right':''}">${h}</div>`
-          ).join('')}
+        <div style="display:flex;align-items:center;padding:10px 14px;background:var(--surface-alt);border-bottom:1px solid var(--border);gap:8px">
+          <div style="width:100px;flex-shrink:0;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Tipo</div>
+          <div style="flex:1;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Descrição</div>
+          <div style="width:85px;flex-shrink:0;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Data</div>
+          <div style="width:110px;flex-shrink:0;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;text-align:right">Valor</div>
+          <div style="width:68px;flex-shrink:0"></div>
         </div>
         <div id="listaLancamentosRows">
           ${lista.map(l => `
-            <div style="display:grid;grid-template-columns:110px 1fr 90px 120px 72px;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);align-items:center"
+            <div style="display:flex;align-items:center;padding:11px 14px;border-bottom:1px solid var(--border);gap:8px;transition:background 150ms"
               onmouseenter="this.style.background='var(--surface-alt)'" onmouseleave="this.style.background=''">
-              <div><span class="tipo-badge ${l.tipo}">${getTipoLabel(l.tipo)}</span></div>
-              <div>
-                <div style="font-size:13.5px;font-weight:500;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(l.descricao)}</div>
-                ${l.observacao ? `<div style="font-size:12px;color:var(--text-muted)">${escapeHtml(l.observacao)}</div>` : ''}
+              <div style="width:100px;flex-shrink:0">
+                <span class="tipo-badge ${l.tipo}">${getTipoLabel(l.tipo)}</span>
               </div>
-              <div style="font-size:13px;color:var(--text-secondary)">${formatDate(l.data)}</div>
-              <div style="font-size:14px;font-weight:600;text-align:right;color:${l.tipo==='entrada'?'var(--color-entrada)':'var(--color-saida)'}">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13.5px;font-weight:500;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(l.descricao)}</div>
+                ${l.observacao ? '<div style="font-size:12px;color:var(--text-muted)">' + escapeHtml(l.observacao) + '</div>' : ''}
+              </div>
+              <div style="width:85px;flex-shrink:0;font-size:13px;color:var(--text-secondary)">${formatDate(l.data)}</div>
+              <div style="width:110px;flex-shrink:0;font-size:14px;font-weight:600;text-align:right;color:${l.tipo==='entrada'?'var(--color-entrada)':'var(--color-saida)'}">
                 ${l.tipo==='entrada'?'+':'−'} ${formatCurrency(l.valor)}
               </div>
-              <div style="display:flex;gap:2px;justify-content:flex-end;flex-shrink:0">
-                <button class="btn btn-ghost btn-icon btn-sm btn-editar-lanc" data-id="${l.id}" title="Editar"
-                  style="width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;flex-shrink:0">
+              <div style="display:flex;gap:4px;flex-shrink:0;margin-left:4px">
+                <button class="btn-editar-lanc" data-id="${l.id}"
+                  style="width:30px;height:30px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center"
+                  onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
                   <i class="ti ti-edit" style="font-size:14px;color:var(--text-muted);pointer-events:none"></i>
                 </button>
-                <button class="btn btn-ghost btn-icon btn-sm btn-deletar-lanc" data-id="${l.id}" title="Excluir"
-                  style="width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;flex-shrink:0">
+                <button class="btn-deletar-lanc" data-id="${l.id}"
+                  style="width:30px;height:30px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center"
+                  onmouseenter="this.style.borderColor='var(--danger)'" onmouseleave="this.style.borderColor='var(--border)'">
                   <i class="ti ti-trash" style="font-size:14px;color:var(--text-muted);pointer-events:none"></i>
                 </button>
               </div>
