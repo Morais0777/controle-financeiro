@@ -288,7 +288,9 @@ function renderTabelaLancamentos() {
       </button>
     </div>
 
-    <div class="lanc-resumo-grid">
+    <div style="${window.innerWidth <= 600
+        ? 'display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px'
+        : 'display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap'}">
       ${[
         {label:'Entradas', val:t.entrada,     cor:'var(--color-entrada)', bg:'var(--color-entrada-bg)'},
         {label:'Saídas',   val:t.totalSaidas, cor:'var(--color-saida)',   bg:'var(--color-saida-bg)'},
@@ -296,9 +298,9 @@ function renderTabelaLancamentos() {
           cor:saldo>=0?'var(--color-entrada)':'var(--color-saida)',
           bg:saldo>=0?'var(--color-entrada-bg)':'var(--color-saida-bg)'},
       ].map(x=>`
-        <div style="background:${x.bg};border-radius:var(--radius);padding:10px 16px;">
-          <div style="font-size:11px;color:${x.cor};font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${x.label}</div>
-          <div style="font-size:18px;font-weight:600;color:${x.cor}">${formatCurrency(x.val)}</div>
+        <div style="background:${x.bg};border-radius:var(--radius);padding:${window.innerWidth<=600?'8px 10px':'10px 16px'};">
+          <div style="font-size:${window.innerWidth<=600?'10px':'11px'};color:${x.cor};font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${x.label}</div>
+          <div style="font-size:${window.innerWidth<=600?'14px':'18px'};font-weight:600;color:${x.cor}">${formatCurrency(x.val)}</div>
         </div>
       `).join('')}
     </div>
@@ -310,83 +312,85 @@ function renderTabelaLancamentos() {
         <div class="empty-sub">Tente ajustar os filtros</div>
       </div>
     ` : `
-      <!-- Tabela desktop -->
-      <div class="lanc-tabela-desktop">
-        <div style="display:flex;align-items:center;padding:10px 14px;background:var(--surface-alt);border-bottom:1px solid var(--border);gap:8px">
-          <div style="width:100px;flex-shrink:0;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Tipo</div>
-          <div style="flex:1;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Descrição</div>
-          <div style="width:85px;flex-shrink:0;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Data</div>
-          <div style="width:110px;flex-shrink:0;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;text-align:right">Valor</div>
-          <div style="width:68px;flex-shrink:0"></div>
-        </div>
-        <div id="listaLancamentosRows">
+      ${window.innerWidth <= 600 ? `
+        <div>
           ${lista.map(l => `
-            <div style="display:flex;align-items:center;padding:11px 14px;border-bottom:1px solid var(--border);gap:8px;transition:background 150ms"
-              onmouseenter="this.style.background='var(--surface-alt)'" onmouseleave="this.style.background=''">
-              <div style="width:100px;flex-shrink:0">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
                 <span class="tipo-badge ${l.tipo}">${getTipoLabel(l.tipo)}</span>
+                <div style="display:flex;gap:6px">
+                  <button class="btn-editar-lanc" data-id="${l.id}"
+                    style="width:34px;height:34px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <i class="ti ti-edit" style="font-size:16px;color:var(--text-secondary);pointer-events:none"></i>
+                  </button>
+                  <button class="btn-deletar-lanc" data-id="${l.id}"
+                    style="width:34px;height:34px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                    <i class="ti ti-trash" style="font-size:16px;color:var(--text-secondary);pointer-events:none"></i>
+                  </button>
+                </div>
               </div>
-              <div style="flex:1;min-width:0">
-                <div style="font-size:13.5px;font-weight:500;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(l.descricao)}</div>
-                ${l.observacao ? '<div style="font-size:12px;color:var(--text-muted)">' + escapeHtml(l.observacao) + '</div>' : ''}
-              </div>
-              <div style="width:85px;flex-shrink:0;font-size:13px;color:var(--text-secondary)">${formatDate(l.data)}</div>
-              <div style="width:110px;flex-shrink:0;font-size:14px;font-weight:600;text-align:right;color:${l.tipo==='entrada'?'var(--color-entrada)':'var(--color-saida)'}">
-                ${l.tipo==='entrada'?'+':'−'} ${formatCurrency(l.valor)}
-              </div>
-              <div style="display:flex;gap:4px;flex-shrink:0;margin-left:4px">
-                <button class="btn-editar-lanc" data-id="${l.id}"
-                  style="width:30px;height:30px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center"
-                  onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
-                  <i class="ti ti-edit" style="font-size:14px;color:var(--text-secondary);pointer-events:none"></i>
-                </button>
-                <button class="btn-deletar-lanc" data-id="${l.id}"
-                  style="width:30px;height:30px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center"
-                  onmouseenter="this.style.borderColor='var(--danger)'" onmouseleave="this.style.borderColor='var(--border)'">
-                  <i class="ti ti-trash" style="font-size:14px;color:var(--text-secondary);pointer-events:none"></i>
-                </button>
+              <div style="font-size:14px;font-weight:500;color:var(--text-primary)">${escapeHtml(l.descricao)}</div>
+              ${l.observacao ? '<div style="font-size:12px;color:var(--text-muted);margin-top:2px">' + escapeHtml(l.observacao) + '</div>' : ''}
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+                <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-muted)">
+                  <i class="ti ti-calendar" style="font-size:12px"></i>${formatDate(l.data)}
+                </span>
+                <span style="font-size:15px;font-weight:600;color:${l.tipo==='entrada'?'var(--color-entrada)':'var(--color-saida)'}">
+                  ${l.tipo==='entrada'?'+':'−'} ${formatCurrency(l.valor)}
+                </span>
               </div>
             </div>
           `).join('')}
-        </div>
-        <div style="padding:12px 16px;background:var(--surface-alt);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-          <div style="font-size:12px;color:var(--text-muted)">${lista.length} lançamento${lista.length!==1?'s':''}</div>
-          <div style="font-size:13px;font-weight:600;color:${saldo>=0?'var(--color-entrada)':'var(--color-saida)'}">Saldo: ${formatCurrency(saldo)}</div>
-        </div>
-      </div>
-
-      <!-- Cards mobile -->
-      <div class="lanc-cards-mobile">
-        ${lista.map(l => `
-          <div class="lanc-card-mobile">
-            <div class="lanc-card-top">
-              <span class="tipo-badge ${l.tipo}">${getTipoLabel(l.tipo)}</span>
-              <div class="lanc-card-acoes">
-                <button class="btn-editar-lanc" data-id="${l.id}"
-                  style="width:32px;height:32px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center">
-                  <i class="ti ti-edit" style="font-size:15px;color:var(--text-secondary);pointer-events:none"></i>
-                </button>
-                <button class="btn-deletar-lanc" data-id="${l.id}"
-                  style="width:32px;height:32px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center">
-                  <i class="ti ti-trash" style="font-size:15px;color:var(--text-secondary);pointer-events:none"></i>
-                </button>
-              </div>
-            </div>
-            <div class="lanc-card-desc">${escapeHtml(l.descricao)}</div>
-            ${l.observacao ? `<div class="lanc-card-obs">${escapeHtml(l.observacao)}</div>` : ''}
-            <div class="lanc-card-rodape">
-              <span class="lanc-card-data"><i class="ti ti-calendar" style="font-size:12px"></i>${formatDate(l.data)}</span>
-              <span class="lanc-card-valor" style="color:${l.tipo==='entrada'?'var(--color-entrada)':'var(--color-saida)'}">
-                ${l.tipo==='entrada'?'+':'−'} ${formatCurrency(l.valor)}
-              </span>
-            </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 4px;font-size:12px;color:var(--text-muted)">
+            <span>${lista.length} lançamento${lista.length!==1?'s':''}</span>
+            <span style="font-weight:600;color:${saldo>=0?'var(--color-entrada)':'var(--color-saida)'}">Saldo: ${formatCurrency(saldo)}</span>
           </div>
-        `).join('')}
-        <div class="lanc-card-footer">
-          <span>${lista.length} lançamento${lista.length!==1?'s':''}</span>
-          <span style="font-weight:600;color:${saldo>=0?'var(--color-entrada)':'var(--color-saida)'}">Saldo: ${formatCurrency(saldo)}</span>
         </div>
-      </div>
+      ` : `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
+          <div style="display:flex;align-items:center;padding:10px 14px;background:var(--surface-alt);border-bottom:1px solid var(--border);gap:8px">
+            <div style="width:100px;flex-shrink:0;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Tipo</div>
+            <div style="flex:1;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Descrição</div>
+            <div style="width:85px;flex-shrink:0;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Data</div>
+            <div style="width:110px;flex-shrink:0;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;text-align:right">Valor</div>
+            <div style="width:68px;flex-shrink:0"></div>
+          </div>
+          <div id="listaLancamentosRows">
+            ${lista.map(l => `
+              <div style="display:flex;align-items:center;padding:11px 14px;border-bottom:1px solid var(--border);gap:8px;transition:background 150ms"
+                onmouseenter="this.style.background='var(--surface-alt)'" onmouseleave="this.style.background=''">
+                <div style="width:100px;flex-shrink:0">
+                  <span class="tipo-badge ${l.tipo}">${getTipoLabel(l.tipo)}</span>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13.5px;font-weight:500;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(l.descricao)}</div>
+                  ${l.observacao ? '<div style="font-size:12px;color:var(--text-muted)">' + escapeHtml(l.observacao) + '</div>' : ''}
+                </div>
+                <div style="width:85px;flex-shrink:0;font-size:13px;color:var(--text-secondary)">${formatDate(l.data)}</div>
+                <div style="width:110px;flex-shrink:0;font-size:14px;font-weight:600;text-align:right;color:${l.tipo==='entrada'?'var(--color-entrada)':'var(--color-saida)'}">
+                  ${l.tipo==='entrada'?'+':'−'} ${formatCurrency(l.valor)}
+                </div>
+                <div style="display:flex;gap:4px;flex-shrink:0;margin-left:4px">
+                  <button class="btn-editar-lanc" data-id="${l.id}"
+                    style="width:30px;height:30px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center"
+                    onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
+                    <i class="ti ti-edit" style="font-size:14px;color:var(--text-secondary);pointer-events:none"></i>
+                  </button>
+                  <button class="btn-deletar-lanc" data-id="${l.id}"
+                    style="width:30px;height:30px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center"
+                    onmouseenter="this.style.borderColor='var(--danger)'" onmouseleave="this.style.borderColor='var(--border)'">
+                    <i class="ti ti-trash" style="font-size:14px;color:var(--text-secondary);pointer-events:none"></i>
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div style="padding:12px 16px;background:var(--surface-alt);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:12px;color:var(--text-muted)">${lista.length} lançamento${lista.length!==1?'s':''}</div>
+            <div style="font-size:13px;font-weight:600;color:${saldo>=0?'var(--color-entrada)':'var(--color-saida)'}">Saldo: ${formatCurrency(saldo)}</div>
+          </div>
+        </div>
+      `}
     `}
   `;
 
