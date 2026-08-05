@@ -337,12 +337,12 @@ function renderTabelaLancamentos() {
                 <button class="btn-editar-lanc" data-id="${l.id}"
                   style="width:30px;height:30px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center"
                   onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
-                  <i class="ti ti-edit" style="font-size:14px;color:var(--text-muted);pointer-events:none"></i>
+                  <i class="ti ti-edit" style="font-size:14px;color:var(--text-secondary);pointer-events:none"></i>
                 </button>
                 <button class="btn-deletar-lanc" data-id="${l.id}"
                   style="width:30px;height:30px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center"
                   onmouseenter="this.style.borderColor='var(--danger)'" onmouseleave="this.style.borderColor='var(--border)'">
-                  <i class="ti ti-trash" style="font-size:14px;color:var(--text-muted);pointer-events:none"></i>
+                  <i class="ti ti-trash" style="font-size:14px;color:var(--text-secondary);pointer-events:none"></i>
                 </button>
               </div>
             </div>
@@ -645,10 +645,10 @@ async function carregarFixos() {
         ${f.tipo==='entrada'?'+':'−'} ${formatCurrency(f.valor)}
       </div>
       <button class="btn btn-ghost btn-icon btn-sm btn-editar-fixo" data-id="${f.id}" title="Editar">
-        <i class="ti ti-edit" style="font-size:15px;color:var(--text-muted);pointer-events:none"></i>
+        <i class="ti ti-edit" style="font-size:15px;color:var(--text-secondary);pointer-events:none"></i>
       </button>
       <button class="btn btn-ghost btn-icon btn-sm btn-deletar-fixo" data-id="${f.id}" title="Excluir">
-        <i class="ti ti-trash" style="font-size:15px;color:var(--text-muted);pointer-events:none"></i>
+        <i class="ti ti-trash" style="font-size:15px;color:var(--text-secondary);pointer-events:none"></i>
       </button>
     </div>`).join('');
 
@@ -770,10 +770,10 @@ async function carregarCategorias() {
       </div>
       <div style="width:10px;height:10px;border-radius:50%;background:${c.cor};flex-shrink:0"></div>
       <button class="btn btn-ghost btn-icon btn-sm btn-editar-cat" data-id="${c.id}" title="Editar">
-        <i class="ti ti-edit" style="font-size:15px;color:var(--text-muted);pointer-events:none"></i>
+        <i class="ti ti-edit" style="font-size:15px;color:var(--text-secondary);pointer-events:none"></i>
       </button>
       <button class="btn btn-ghost btn-icon btn-sm btn-deletar-cat" data-id="${c.id}" title="Excluir">
-        <i class="ti ti-trash" style="font-size:15px;color:var(--text-muted);pointer-events:none"></i>
+        <i class="ti ti-trash" style="font-size:15px;color:var(--text-secondary);pointer-events:none"></i>
       </button>
     </div>`).join('');
 
@@ -847,7 +847,7 @@ function renderCompetencias() {
           ? `<span style="padding:3px 10px;background:var(--color-entrada-bg);color:var(--color-entrada);border-radius:var(--radius-full);font-size:11.5px;font-weight:500">Ativa</span>`
           : `<button class="btn btn-secondary btn-sm btn-sel-comp" data-id="${c.id}">Selecionar</button>
              <button class="btn btn-ghost btn-icon btn-sm btn-del-comp" data-id="${c.id}" title="Excluir">
-               <i class="ti ti-trash" style="font-size:15px;color:var(--text-muted);pointer-events:none"></i>
+               <i class="ti ti-trash" style="font-size:15px;color:var(--text-secondary);pointer-events:none"></i>
              </button>`
         }
       </div>
