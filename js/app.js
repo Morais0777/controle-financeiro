@@ -311,14 +311,14 @@ function renderTabelaLancamentos() {
       </div>
     ` : `
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
-        <div style="display:grid;grid-template-columns:120px 1fr 100px 130px 80px;gap:12px;padding:10px 16px;background:var(--surface-alt);border-bottom:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:110px 1fr 90px 120px 72px;gap:8px;padding:10px 14px;background:var(--surface-alt);border-bottom:1px solid var(--border)">
           ${['Tipo','Descrição','Data','Valor',''].map(h=>
             `<div style="font-size:11.5px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em${h==='Valor'?';text-align:right':''}">${h}</div>`
           ).join('')}
         </div>
         <div id="listaLancamentosRows">
           ${lista.map(l => `
-            <div style="display:grid;grid-template-columns:120px 1fr 100px 130px 80px;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center"
+            <div style="display:grid;grid-template-columns:110px 1fr 90px 120px 72px;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);align-items:center"
               onmouseenter="this.style.background='var(--surface-alt)'" onmouseleave="this.style.background=''">
               <div><span class="tipo-badge ${l.tipo}">${getTipoLabel(l.tipo)}</span></div>
               <div>
@@ -329,12 +329,14 @@ function renderTabelaLancamentos() {
               <div style="font-size:14px;font-weight:600;text-align:right;color:${l.tipo==='entrada'?'var(--color-entrada)':'var(--color-saida)'}">
                 ${l.tipo==='entrada'?'+':'−'} ${formatCurrency(l.valor)}
               </div>
-              <div style="display:flex;gap:4px;justify-content:flex-end">
-                <button class="btn btn-ghost btn-icon btn-sm btn-editar-lanc" data-id="${l.id}" title="Editar">
-                  <i class="ti ti-edit" style="font-size:15px;color:var(--text-muted);pointer-events:none"></i>
+              <div style="display:flex;gap:2px;justify-content:flex-end;flex-shrink:0">
+                <button class="btn btn-ghost btn-icon btn-sm btn-editar-lanc" data-id="${l.id}" title="Editar"
+                  style="width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;flex-shrink:0">
+                  <i class="ti ti-edit" style="font-size:14px;color:var(--text-muted);pointer-events:none"></i>
                 </button>
-                <button class="btn btn-ghost btn-icon btn-sm btn-deletar-lanc" data-id="${l.id}" title="Excluir">
-                  <i class="ti ti-trash" style="font-size:15px;color:var(--text-muted);pointer-events:none"></i>
+                <button class="btn btn-ghost btn-icon btn-sm btn-deletar-lanc" data-id="${l.id}" title="Excluir"
+                  style="width:30px;height:30px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;flex-shrink:0">
+                  <i class="ti ti-trash" style="font-size:14px;color:var(--text-muted);pointer-events:none"></i>
                 </button>
               </div>
             </div>
