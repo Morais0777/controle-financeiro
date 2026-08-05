@@ -288,7 +288,7 @@ function renderTabelaLancamentos() {
       </button>
     </div>
 
-    <div style="${window.innerWidth <= 600
+    <div style="${window.innerWidth <= 768
         ? 'display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px'
         : 'display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap'}">
       ${[
@@ -298,9 +298,9 @@ function renderTabelaLancamentos() {
           cor:saldo>=0?'var(--color-entrada)':'var(--color-saida)',
           bg:saldo>=0?'var(--color-entrada-bg)':'var(--color-saida-bg)'},
       ].map(x=>`
-        <div style="background:${x.bg};border-radius:var(--radius);padding:${window.innerWidth<=600?'8px 10px':'10px 16px'};">
-          <div style="font-size:${window.innerWidth<=600?'10px':'11px'};color:${x.cor};font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${x.label}</div>
-          <div style="font-size:${window.innerWidth<=600?'14px':'18px'};font-weight:600;color:${x.cor}">${formatCurrency(x.val)}</div>
+        <div style="background:${x.bg};border-radius:var(--radius);padding:${window.innerWidth<=768?'8px 10px':'10px 16px'};">
+          <div style="font-size:${window.innerWidth<=768?'10px':'11px'};color:${x.cor};font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${x.label}</div>
+          <div style="font-size:${window.innerWidth<=768?'14px':'18px'};font-weight:600;color:${x.cor}">${formatCurrency(x.val)}</div>
         </div>
       `).join('')}
     </div>
@@ -312,7 +312,7 @@ function renderTabelaLancamentos() {
         <div class="empty-sub">Tente ajustar os filtros</div>
       </div>
     ` : `
-      ${window.innerWidth <= 600 ? `
+      ${window.innerWidth <= 768 ? `
         <div>
           ${lista.map(l => `
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px">
