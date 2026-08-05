@@ -484,7 +484,21 @@
 .lancamento-row-data { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
 .lancamento-row-valor { font-size: 13.5px; font-weight: 600; flex-shrink: 0; min-width: 110px; text-align: right; }
 
-.btn-delete { color: var(--text-muted); font-size: 15px; padding: 5px; border-radius: var(--radius-sm); transition: all var(--transition); display: flex; }
+/* ── Botão de excluir ── CORRIGIDO: era color: var(--text-muted) que deixava invisível */
+.btn-delete {
+  color: var(--text-secondary);
+  font-size: 15px;
+  padding: 5px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  visibility: visible;
+  cursor: pointer;
+}
+
 .btn-delete:hover { color: var(--danger); background: var(--danger-bg); }
 
 /* ── Gráficos ── */
