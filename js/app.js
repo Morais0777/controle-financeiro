@@ -288,7 +288,7 @@ function renderTabelaLancamentos() {
       </button>
     </div>
 
-    <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+    <div class="lanc-resumo-grid">
       ${[
         {label:'Entradas', val:t.entrada,     cor:'var(--color-entrada)', bg:'var(--color-entrada-bg)'},
         {label:'Saídas',   val:t.totalSaidas, cor:'var(--color-saida)',   bg:'var(--color-saida-bg)'},
@@ -296,7 +296,7 @@ function renderTabelaLancamentos() {
           cor:saldo>=0?'var(--color-entrada)':'var(--color-saida)',
           bg:saldo>=0?'var(--color-entrada-bg)':'var(--color-saida-bg)'},
       ].map(x=>`
-        <div style="background:${x.bg};border-radius:var(--radius);padding:10px 16px;min-width:140px">
+        <div style="background:${x.bg};border-radius:var(--radius);padding:10px 16px;">
           <div style="font-size:11px;color:${x.cor};font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">${x.label}</div>
           <div style="font-size:18px;font-weight:600;color:${x.cor}">${formatCurrency(x.val)}</div>
         </div>
@@ -310,7 +310,8 @@ function renderTabelaLancamentos() {
         <div class="empty-sub">Tente ajustar os filtros</div>
       </div>
     ` : `
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
+      <!-- Tabela desktop -->
+      <div class="lanc-tabela-desktop">
         <div style="display:flex;align-items:center;padding:10px 14px;background:var(--surface-alt);border-bottom:1px solid var(--border);gap:8px">
           <div style="width:100px;flex-shrink:0;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Tipo</div>
           <div style="flex:1;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Descrição</div>
@@ -351,6 +352,39 @@ function renderTabelaLancamentos() {
         <div style="padding:12px 16px;background:var(--surface-alt);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
           <div style="font-size:12px;color:var(--text-muted)">${lista.length} lançamento${lista.length!==1?'s':''}</div>
           <div style="font-size:13px;font-weight:600;color:${saldo>=0?'var(--color-entrada)':'var(--color-saida)'}">Saldo: ${formatCurrency(saldo)}</div>
+        </div>
+      </div>
+
+      <!-- Cards mobile -->
+      <div class="lanc-cards-mobile">
+        ${lista.map(l => `
+          <div class="lanc-card-mobile">
+            <div class="lanc-card-top">
+              <span class="tipo-badge ${l.tipo}">${getTipoLabel(l.tipo)}</span>
+              <div class="lanc-card-acoes">
+                <button class="btn-editar-lanc" data-id="${l.id}"
+                  style="width:32px;height:32px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center">
+                  <i class="ti ti-edit" style="font-size:15px;color:var(--text-secondary);pointer-events:none"></i>
+                </button>
+                <button class="btn-deletar-lanc" data-id="${l.id}"
+                  style="width:32px;height:32px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center">
+                  <i class="ti ti-trash" style="font-size:15px;color:var(--text-secondary);pointer-events:none"></i>
+                </button>
+              </div>
+            </div>
+            <div class="lanc-card-desc">${escapeHtml(l.descricao)}</div>
+            ${l.observacao ? `<div class="lanc-card-obs">${escapeHtml(l.observacao)}</div>` : ''}
+            <div class="lanc-card-rodape">
+              <span class="lanc-card-data"><i class="ti ti-calendar" style="font-size:12px"></i>${formatDate(l.data)}</span>
+              <span class="lanc-card-valor" style="color:${l.tipo==='entrada'?'var(--color-entrada)':'var(--color-saida)'}">
+                ${l.tipo==='entrada'?'+':'−'} ${formatCurrency(l.valor)}
+              </span>
+            </div>
+          </div>
+        `).join('')}
+        <div class="lanc-card-footer">
+          <span>${lista.length} lançamento${lista.length!==1?'s':''}</span>
+          <span style="font-weight:600;color:${saldo>=0?'var(--color-entrada)':'var(--color-saida)'}">Saldo: ${formatCurrency(saldo)}</span>
         </div>
       </div>
     `}
