@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="css/reset.css?v=5" />
   <link rel="stylesheet" href="css/global.css?v=5" />
   <link rel="stylesheet" href="css/home.css?v=5" />
+  <link rel="stylesheet" href="css/relatorios.css?v=6" />
   <style>
     .cfg-tabs-bar{display:flex;gap:2px;background:var(--surface-alt);border-radius:var(--radius);padding:3px;margin-bottom:24px;width:fit-content;border:1px solid var(--border)}
     .cfg-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -299,64 +300,101 @@
         <!-- RELATÓRIOS -->
         <div id="page-relatorios" class="page">
           <div class="page-header"><h2>Relatórios</h2></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:800px">
-            <div class="card">
-              <div style="width:44px;height:44px;background:var(--accent-bg);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:16px">
-                <i class="ti ti-file-text" style="font-size:22px;color:var(--accent)"></i>
+
+          <div class="rel-card">
+
+            <!-- Ícone + título -->
+            <div class="rel-card-header">
+              <div class="rel-card-icon">
+                <i class="ti ti-file-text"></i>
               </div>
-              <div class="card-title">Relatório mensal em PDF</div>
-              <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;line-height:1.6">
-                Gera um PDF profissional com apenas os tipos que possuem movimentação no período.
-              </p>
-              <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-                  <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>Apenas categorias com movimentação
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-                  <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>Totais por tipo + saldo
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-                  <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>Layout limpo e profissional
-                </div>
+              <div>
+                <div class="rel-card-title">Gerar relatório em PDF</div>
+                <p class="rel-card-desc">
+                  Exporte um PDF profissional com resumo financeiro, gráficos e tabela completa de lançamentos.
+                </p>
               </div>
-              <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-                <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:110px">
-                  <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Mês</label>
-                  <select id="relMes" style="padding:8px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-alt);color:var(--text-primary);font-size:13px;font-family:var(--font);cursor:pointer">
-                    <option value="1">Janeiro</option><option value="2">Fevereiro</option>
-                    <option value="3">Março</option><option value="4">Abril</option>
-                    <option value="5">Maio</option><option value="6">Junho</option>
-                    <option value="7">Julho</option><option value="8">Agosto</option>
-                    <option value="9">Setembro</option><option value="10">Outubro</option>
-                    <option value="11">Novembro</option><option value="12">Dezembro</option>
-                  </select>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:90px">
-                  <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Ano</label>
-                  <select id="relAno" style="padding:8px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-alt);color:var(--text-primary);font-size:13px;font-family:var(--font);cursor:pointer">
+            </div>
+
+            <!-- Tipo de período -->
+            <div class="rel-field-group" style="margin-bottom:16px">
+              <label class="rel-label">Período</label>
+              <select id="relTipoPeriodo" class="rel-select" onchange="relAtualizarControles()">
+                <option value="mensal">Mensal</option>
+                <option value="trimestral">Trimestral</option>
+                <option value="anual">Anual</option>
+              </select>
+            </div>
+
+            <!-- Controles dinâmicos -->
+            <div class="rel-controls-row">
+
+              <!-- Mês -->
+              <div id="relCtrlMes" class="rel-field-group" style="display:flex;flex-direction:column;gap:5px">
+                <label class="rel-label">Mês</label>
+                <select id="relMes" class="rel-select">
+                  <option value="1">Janeiro</option>
+                  <option value="2">Fevereiro</option>
+                  <option value="3">Março</option>
+                  <option value="4">Abril</option>
+                  <option value="5">Maio</option>
+                  <option value="6">Junho</option>
+                  <option value="7">Julho</option>
+                  <option value="8">Agosto</option>
+                  <option value="9">Setembro</option>
+                  <option value="10">Outubro</option>
+                  <option value="11">Novembro</option>
+                  <option value="12">Dezembro</option>
+                </select>
+              </div>
+
+              <!-- Trimestre -->
+              <div id="relCtrlTrimestre" class="rel-field-group" style="display:none;flex-direction:column;gap:5px">
+                <label class="rel-label">Trimestre</label>
+                <select id="relTrimestre" class="rel-select">
+                  <option value="1">1º Trimestre (Jan–Mar)</option>
+                  <option value="2">2º Trimestre (Abr–Jun)</option>
+                  <option value="3">3º Trimestre (Jul–Set)</option>
+                  <option value="4">4º Trimestre (Out–Dez)</option>
+                </select>
+              </div>
+
+              <!-- Ano (sempre visível) -->
+              <div class="rel-field-group" style="display:flex;flex-direction:column;gap:5px">
+                <label class="rel-label">Ano</label>
+                <select id="relAno" class="rel-select">
                   <option value="2026" selected>2026</option>
                   <option value="2025">2025</option>
                   <option value="2024">2024</option>
                   <option value="2023">2023</option>
                   <option value="2022">2022</option>
                   <option value="2021">2021</option>
-                  </select>
-                </div>
+                </select>
               </div>
-              <button class="btn btn-primary" onclick="gerarRelatorio()" style="width:100%">
-                <i class="ti ti-download"></i>Baixar PDF
-              </button>
+
             </div>
-            <div class="card" style="background:var(--surface-alt);border-style:dashed">
-              <div style="width:44px;height:44px;background:var(--border);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;margin-bottom:16px">
-                <i class="ti ti-chart-bar" style="font-size:22px;color:var(--text-muted)"></i>
+
+            <!-- Checklist -->
+            <div class="rel-features">
+              <div class="rel-feature-item">
+                <i class="ti ti-check"></i><span>Resumo financeiro por tipo</span>
               </div>
-              <div style="font-size:14px;font-weight:600;color:var(--text-secondary);margin-bottom:8px">Relatório por período</div>
-              <p style="color:var(--text-muted);font-size:13px;line-height:1.6">Múltiplos meses em um único relatório.</p>
-              <div style="margin-top:20px;padding:10px 14px;background:var(--accent-bg);border-radius:var(--radius);font-size:12px;color:var(--accent);font-weight:500;display:flex;align-items:center;gap:6px">
-                <i class="ti ti-clock" style="font-size:14px"></i>Em breve
+              <div class="rel-feature-item">
+                <i class="ti ti-check"></i><span>Gráficos de barras e distribuição</span>
+              </div>
+              <div class="rel-feature-item">
+                <i class="ti ti-check"></i><span>Tabela completa de lançamentos</span>
+              </div>
+              <div class="rel-feature-item">
+                <i class="ti ti-check"></i><span>Totais e saldo final</span>
               </div>
             </div>
+
+            <!-- Botão -->
+            <button class="btn btn-primary rel-btn-gerar" onclick="gerarRelatorio()">
+              <i class="ti ti-download"></i>Gerar / Baixar PDF
+            </button>
+
           </div>
         </div>
 
@@ -611,7 +649,7 @@
   <script src="services/supabase.js?v=5"></script>
   <script src="utils/helpers.js?v=5"></script>
   <script src="js/app.js?v=5"></script>
-  <script src="js/relatorios.js?v=5"></script>
+  <script src="js/relatorios.js?v=6"></script>
 
   <script>
     // Responsividade configurações — aplicada por JS, sem depender de CSS cache

@@ -1455,6 +1455,7 @@ function navigateTo(page) {
   currentPage = page;
   if (window.innerWidth < 768) document.getElementById('sidebar').classList.remove('open');
   if (page === 'dashboard') setTimeout(initDashboard, 50);
+  if (page === 'relatorios') setTimeout(initRelatorios, 50);
 }
 
 function toggleSidebar() {
@@ -1567,7 +1568,5 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
-  // Pré-selecionar mês atual no relatório
-  const relMes = document.getElementById('relMes');
-  if (relMes) relMes.value = new Date().getMonth() + 1;
+  // A pré-seleção dos selects de relatório é feita por initRelatorios() em relatorios.js
 });
