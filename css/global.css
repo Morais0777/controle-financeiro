@@ -555,6 +555,95 @@
 .spinner.visible { display: block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── Grid resumo lançamentos ── */
+.lanc-resumo-grid {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.lanc-resumo-grid > div {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* ── Tabela desktop / Cards mobile ── */
+.lanc-tabela-desktop {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.lanc-cards-mobile { display: none; }
+
+/* Card mobile individual */
+.lanc-card-mobile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+
+.lanc-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.lanc-card-acoes {
+  display: flex;
+  gap: 6px;
+}
+
+.lanc-card-desc {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.lanc-card-obs {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.lanc-card-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.lanc-card-data {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.lanc-card-valor {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.lanc-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 4px 2px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 /* ── Responsive ── */
 @media (max-width: 900px) {
   .home-grid { grid-template-columns: 1fr; }
@@ -569,6 +658,42 @@
   .menu-toggle { display: flex; }
   .page { padding: 16px; }
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Topbar: oculta badge de competência redundante, mantém só o select */
+  .topbar-badge { display: none; }
+
+  /* Filtros de lançamentos empilham no mobile */
+  #lancamentosContent > div:first-child {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  #lancamentosContent > div:first-child > select,
+  #lancamentosContent > div:first-child > button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  /* Troca tabela por cards */
+  .lanc-tabela-desktop { display: none; }
+  .lanc-cards-mobile   { display: block; }
+
+  /* Resumo em grid 3 colunas compacto */
+  .lanc-resumo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .lanc-resumo-grid > div {
+    min-width: 0;
+    padding: 8px 10px !important;
+  }
+
+  .lanc-resumo-grid > div > div:last-child {
+    font-size: 15px !important;
+  }
 }
 
 @media (max-width: 480px) {
