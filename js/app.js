@@ -1201,6 +1201,27 @@ async function confirmarImportacao() {
   dadosImportacao = null;
 }
 
+// ── LAYOUT MOBILE CONFIGURAÇÕES ────────────────
+function aplicarLayoutCfgMobile() {
+  const mobile = window.innerWidth <= 768;
+  const tabsBar   = document.getElementById('cfgTabsBar');
+  const gridPerf  = document.getElementById('cfgGridPerfil');
+  const gridCat   = document.getElementById('cfgGridCat');
+  const gridFixos = document.getElementById('cfgGridFixos');
+  const gridComp  = document.getElementById('cfgGridComp');
+  if (tabsBar) {
+    tabsBar.style.width = mobile ? '100%' : 'fit-content';
+    tabsBar.querySelectorAll('.cfg-tab').forEach(t => {
+      t.style.flex = mobile ? '1' : '';
+      t.style.textAlign = mobile ? 'center' : '';
+    });
+  }
+  if (gridPerf)  gridPerf.style.gridTemplateColumns  = mobile ? '1fr' : '1fr 1fr';
+  if (gridCat)   gridCat.style.gridTemplateColumns   = mobile ? '1fr' : '340px 1fr';
+  if (gridFixos) gridFixos.style.gridTemplateColumns = mobile ? '1fr' : '340px 1fr';
+  if (gridComp)  gridComp.style.gridTemplateColumns  = mobile ? '1fr' : '1fr 1fr';
+}
+
 // ── CONFIGURAÇÕES — ABAS ───────────────────────
 
 function showCfgTab(tab) {
@@ -1213,6 +1234,7 @@ function showCfgTab(tab) {
   if (tab === 'fixos')        carregarFixos();
   if (tab === 'competencias') renderCompetencias();
   if (tab === 'importacao')   iniciarImportacao();
+  if (typeof aplicarLayoutCfgMobile === 'function') aplicarLayoutCfgMobile();
 }
 
 // ── GRÁFICOS ───────────────────────────────────
