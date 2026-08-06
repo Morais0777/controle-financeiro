@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FinanceIQ — Painel</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css" />  <link rel="stylesheet" href="css/variables.css?v=4" />
-  <link rel="stylesheet" href="css/reset.css?v=4" />
-  <link rel="stylesheet" href="css/global.css?v=4" />
-  <link rel="stylesheet" href="css/home.css?v=4" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css" />  <link rel="stylesheet" href="css/variables.css?v=5" />
+  <link rel="stylesheet" href="css/reset.css?v=5" />
+  <link rel="stylesheet" href="css/global.css?v=5" />
+  <link rel="stylesheet" href="css/home.css?v=5" />
   <style>
     .cfg-tabs-bar{display:flex;gap:2px;background:var(--surface-alt);border-radius:var(--radius);padding:3px;margin-bottom:24px;width:fit-content;border:1px solid var(--border)}
     .cfg-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -224,16 +224,22 @@
                 <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Mês</label>
                 <select id="dashMes"
                   style="padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-alt);color:var(--text-primary);font-size:13px;font-family:var(--font);cursor:pointer;min-width:130px">
-                  <option value="1">Janeiro</option><option value="2">Fevereiro</option>
-                  <option value="3">Março</option><option value="4">Abril</option>
-                  <option value="5">Maio</option><option value="6">Junho</option>
-                  <option value="7">Julho</option><option value="8">Agosto</option>
-                  <option value="9">Setembro</option><option value="10">Outubro</option>
-                  <option value="11">Novembro</option><option value="12">Dezembro</option>
+                                    <option value="1">Janeiro</option>
+                  <option value="2">Fevereiro</option>
+                  <option value="3">Março</option>
+                  <option value="4">Abril</option>
+                  <option value="5">Maio</option>
+                  <option value="6">Junho</option>
+                  <option value="7">Julho</option>
+                  <option value="8" selected>Agosto</option>
+                  <option value="9">Setembro</option>
+                  <option value="10">Outubro</option>
+                  <option value="11">Novembro</option>
+                  <option value="12">Dezembro</option>
                 </select>
               </div>
               <!-- Trimestre -->
-              <div id="dashCtrlTrimestre" style="display:none;flex-direction:column;gap:5px">
+              <div id="dashCtrlTrimestre" style="display:none;gap:5px;flex-direction:column">
                 <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Trimestre</label>
                 <select id="dashTrimestre"
                   style="padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-alt);color:var(--text-primary);font-size:13px;font-family:var(--font);cursor:pointer;min-width:180px">
@@ -248,6 +254,12 @@
                 <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Ano</label>
                 <select id="dashAno"
                   style="padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-alt);color:var(--text-primary);font-size:13px;font-family:var(--font);cursor:pointer;min-width:100px">
+                  <option value="2026" selected>2026</option>
+                  <option value="2025">2025</option>
+                  <option value="2024">2024</option>
+                  <option value="2023">2023</option>
+                  <option value="2022">2022</option>
+                  <option value="2021">2021</option>
                 </select>
               </div>
               <!-- Botão -->
@@ -322,6 +334,12 @@
                 <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:90px">
                   <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Ano</label>
                   <select id="relAno" style="padding:8px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-alt);color:var(--text-primary);font-size:13px;font-family:var(--font);cursor:pointer">
+                  <option value="2026" selected>2026</option>
+                  <option value="2025">2025</option>
+                  <option value="2024">2024</option>
+                  <option value="2023">2023</option>
+                  <option value="2022">2022</option>
+                  <option value="2021">2021</option>
                   </select>
                 </div>
               </div>
@@ -590,10 +608,10 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
-  <script src="services/supabase.js?v=4"></script>
-  <script src="utils/helpers.js?v=4"></script>
-  <script src="js/app.js?v=4"></script>
-  <script src="js/relatorios.js?v=4"></script>
+  <script src="services/supabase.js?v=5"></script>
+  <script src="utils/helpers.js?v=5"></script>
+  <script src="js/app.js?v=5"></script>
+  <script src="js/relatorios.js?v=5"></script>
 
   <script>
     // Responsividade configurações — aplicada por JS, sem depender de CSS cache

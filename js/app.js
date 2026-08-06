@@ -165,7 +165,6 @@ async function carregarLancamentos() {
   atualizarKPIs();
   renderUltimosLancamentos();
   renderTabelaLancamentos();
-  renderGraficos();
 }
 
 // ── KPIs ───────────────────────────────────────
@@ -203,13 +202,6 @@ function atualizarKPIs() {
   trend('kpiSaldoTrend',    lancamentos.length);
   trend('kpiEntradasTrend', lancamentos.filter(l => l.tipo === 'entrada').length);
   trend('kpiSaidasTrend',   lancamentos.filter(l => ['saida','cartao_credito'].includes(l.tipo)).length);
-  if (document.getElementById('dashEntradas'))     setKpi('dashEntradas',     t.entrada);
-  if (document.getElementById('dashSaidas'))       setKpi('dashSaidas',       t.totalSaidas);
-  if (document.getElementById('dashSaldo'))        setKpi('dashSaldo',        t.saldo, t.saldo >= 0 ? 'var(--color-entrada)' : 'var(--color-saida)');
-  if (document.getElementById('dashEmprestimos'))  setKpi('dashEmprestimos',  t.emprestimo);
-  if (document.getElementById('dashInvestimentos'))setKpi('dashInvestimentos',t.investimento);
-  if (document.getElementById('dashCartao'))       setKpi('dashCartao',       t.cartao_credito);
-  if (document.getElementById('dashReserva'))      setKpi('dashReserva',      t.reserva);
 }
 
 // ── ÚLTIMOS LANÇAMENTOS ────────────────────────
@@ -1241,6 +1233,7 @@ function showCfgTab(tab) {
 
 let charts = {};
 
+// Gráfico de barras da tela inicial (Entradas x Saídas)
 function renderGraficos() {
   const t      = calcularTotais();
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -1265,40 +1258,182 @@ function renderGraficos() {
       options: barOpts()
     });
   }
+}
+
+// ── DASHBOARD — período independente ───────────
+
+function initDashboard() {
+  // Pré-selecionar trimestre atual
+  const mesAtual  = new Date().getMonth() + 1;
+  const trimAtual = Math.ceil(mesAtual / 3);
+  const selTrim   = document.getElementById('dashTrimestre');
+  if (selTrim) selTrim.value = trimAtual;
+  // Garantir que os controles estão no estado certo
+  dashAtualizarControles();
+}
+
+function dashAtualizarControles() {
+  const tipo = document.getElementById('dashTipoPeriodo')?.value;
+  const ctrlMes       = document.getElementById('dashCtrlMes');
+  const ctrlTrimestre = document.getElementById('dashCtrlTrimestre');
+  if (!ctrlMes || !ctrlTrimestre) return;
+
+  // Esconde todos primeiro
+  ctrlMes.style.display       = 'none';
+  ctrlTrimestre.style.display = 'none';
+
+  // Mostra o correto usando flex (inline-flex garante mesmo com CSS conflitante)
+  if (tipo === 'mensal')     ctrlMes.style.display       = 'inline-flex';
+  if (tipo === 'trimestral') ctrlTrimestre.style.display = 'inline-flex';
+  // anual: nenhum dos dois aparece, só o ano
+}
+
+async function renderDashboard() {
+  const tipo = document.getElementById('dashTipoPeriodo')?.value || 'mensal';
+  const ano  = parseInt(document.getElementById('dashAno')?.value || new Date().getFullYear());
+  const mes  = parseInt(document.getElementById('dashMes')?.value || 1);
+  const trim = parseInt(document.getElementById('dashTrimestre')?.value || 1);
+
+  const mesesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                      'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+  // Calcular range de datas
+  let inicio, fim, periodoLabel;
+  if (tipo === 'mensal') {
+    inicio = `${ano}-${String(mes).padStart(2,'0')}-01`;
+    fim    = `${ano}-${String(mes).padStart(2,'0')}-31`;
+    periodoLabel = `${mesesNomes[mes-1]} de ${ano}`;
+  } else if (tipo === 'trimestral') {
+    const mesInicio = (trim - 1) * 3 + 1;
+    const mesFim    = trim * 3;
+    inicio = `${ano}-${String(mesInicio).padStart(2,'0')}-01`;
+    fim    = `${ano}-${String(mesFim).padStart(2,'0')}-31`;
+    const nomesTrim = ['1º Trimestre (Jan–Mar)','2º Trimestre (Abr–Jun)',
+                       '3º Trimestre (Jul–Set)','4º Trimestre (Out–Dez)'];
+    periodoLabel = `${nomesTrim[trim-1]} de ${ano}`;
+  } else {
+    inicio = `${ano}-01-01`;
+    fim    = `${ano}-12-31`;
+    periodoLabel = `Ano de ${ano}`;
+  }
+
+  showToast('Carregando dados...', 'info', 3000);
+
+  const { data: lancData } = await window.supabase
+    .from('lancamentos').select('*')
+    .eq('user_id', currentUser.id)
+    .gte('data', inicio).lte('data', fim)
+    .order('data', { ascending: true });
+
+  const lista = lancData || [];
+
+  // Calcular totais — apenas tipos com movimentação
+  const totaisMap = {
+    entrada:0, saida:0, cartao_credito:0,
+    investimento:0, emprestimo:0, reserva:0
+  };
+  lista.forEach(l => {
+    const tipo = l.tipo?.trim();
+    if (tipo && totaisMap[tipo] !== undefined)
+      totaisMap[tipo] += parseFloat(l.valor) || 0;
+  });
+  const totalSaidas = totaisMap.saida + totaisMap.cartao_credito;
+  const saldo       = totaisMap.entrada - totalSaidas;
+
+  // Definição de todos os tipos possíveis
+  const tiposConfig = [
+    { key:'entrada',       label:'Entradas',      icon:'ti-trending-up',    cor:'var(--color-entrada)',      bg:'var(--color-entrada-bg)',      corHex:'#0a7c42' },
+    { key:'saida',         label:'Saídas',         icon:'ti-trending-down',  cor:'var(--color-saida)',        bg:'var(--color-saida-bg)',        corHex:'#c0392b' },
+    { key:'cartao_credito',label:'Cartão',          icon:'ti-credit-card',    cor:'var(--color-cartao)',       bg:'var(--color-cartao-bg)',       corHex:'#b45309' },
+    { key:'investimento',  label:'Investimentos',  icon:'ti-building-bank',  cor:'var(--color-investimento)', bg:'var(--color-investimento-bg)', corHex:'#1a56db' },
+    { key:'emprestimo',    label:'Empréstimos',    icon:'ti-handshake',      cor:'var(--color-emprestimo)',   bg:'var(--color-emprestimo-bg)',   corHex:'#6d28d9' },
+    { key:'reserva',       label:'Reserva',        icon:'ti-shield-check',   cor:'var(--color-reserva)',      bg:'var(--color-reserva-bg)',      corHex:'#0e7490' },
+  ];
+
+  // Filtrar apenas tipos com valor > 0
+  const tiposAtivos = tiposConfig.filter(t => totaisMap[t.key] > 0);
+
+  // KPIs — só exibe tipos com movimentação + saldo sempre
+  const kpiGrid = document.getElementById('dashKpiGrid');
+  if (kpiGrid) {
+    // Saldo sempre aparece
+    const saldoCor = saldo >= 0 ? 'var(--color-entrada)' : 'var(--color-saida)';
+    const saldoBg  = saldo >= 0 ? 'var(--color-entrada-bg)' : 'var(--color-saida-bg)';
+    let kpiHtml = `
+      <div class="kpi-card" style="border-left:3px solid ${saldoCor}">
+        <div class="kpi-label"><i class="ti ti-wallet"></i>Saldo</div>
+        <div class="kpi-value" style="color:${saldoCor}">${formatCurrency(saldo)}</div>
+      </div>`;
+    tiposAtivos.forEach(t => {
+      kpiHtml += `
+        <div class="kpi-card" style="border-left:3px solid ${t.cor}">
+          <div class="kpi-label"><i class="ti ${t.icon}"></i>${t.label}</div>
+          <div class="kpi-value" style="color:${t.cor}">${formatCurrency(totaisMap[t.key])}</div>
+        </div>`;
+    });
+    kpiGrid.innerHTML = kpiHtml;
+  }
+
+  // Label do período
+  const labelEl = document.getElementById('dashPeriodoLabel');
+  if (labelEl) labelEl.textContent = `${periodoLabel} · ${lista.length} lançamento${lista.length!==1?'s':''}`;
+
+  // Mostrar resultado, esconder vazio
+  document.getElementById('dashResultado').style.display = 'block';
+  document.getElementById('dashVazio').style.display     = 'none';
+
+  // Gráficos — só tipos com valor > 0
+  const isDark     = document.documentElement.getAttribute('data-theme') === 'dark';
+  const gridColor  = isDark ? '#2e3348' : '#e4e7ee';
+  const labelColor = isDark ? '#8b92b3' : '#6b7590';
+
+  // Gráfico de barras — apenas tipos ativos
   const ctxM = document.getElementById('chartDashMensal');
   if (ctxM) {
     if (charts.dashMensal) charts.dashMensal.destroy();
-    charts.dashMensal = new Chart(ctxM, {
-      type: 'bar',
-      data: { labels:['Entradas','Saídas','Cartão','Investimentos','Empréstimos','Reserva'],
-        datasets:[{ data:[t.entrada,t.saida,t.cartao_credito,t.investimento,t.emprestimo,t.reserva],
-          backgroundColor:['#0a7c42','#c0392b','#b45309','#1a56db','#6d28d9','#0e7490'],
-          borderRadius:6, borderSkipped:false }] },
-      options: barOpts()
-    });
-  }
-  const ctxD = document.getElementById('chartDashCategoria');
-  if (ctxD) {
-    if (charts.dashCat) charts.dashCat.destroy();
-    const itens = [
-      {label:'Entradas',val:t.entrada,cor:'#0a7c42'},
-      {label:'Saídas',val:t.saida,cor:'#c0392b'},
-      {label:'Cartão',val:t.cartao_credito,cor:'#b45309'},
-      {label:'Investimentos',val:t.investimento,cor:'#1a56db'},
-      {label:'Empréstimos',val:t.emprestimo,cor:'#6d28d9'},
-      {label:'Reserva',val:t.reserva,cor:'#0e7490'},
-    ].filter(x => x.val > 0);
-    if (itens.length > 0) {
-      charts.dashCat = new Chart(ctxD, {
-        type: 'doughnut',
-        data: { labels:itens.map(x=>x.label), datasets:[{ data:itens.map(x=>x.val),
-          backgroundColor:itens.map(x=>x.cor), borderWidth:0 }] },
-        options: { responsive:true, maintainAspectRatio:false, cutout:'65%',
-          plugins:{ legend:{ position:'bottom',
-            labels:{ color:labelColor, font:{size:11}, padding:14, usePointStyle:true } } } }
+    if (tiposAtivos.length > 0) {
+      charts.dashMensal = new Chart(ctxM, {
+        type: 'bar',
+        data: {
+          labels: tiposAtivos.map(t => t.label),
+          datasets: [{ data: tiposAtivos.map(t => totaisMap[t.key]),
+            backgroundColor: tiposAtivos.map(t => t.corHex),
+            borderRadius: 6, borderSkipped: false }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { ticks: { color:labelColor, font:{size:11} }, grid: { color:gridColor } },
+            x: { ticks: { color:labelColor, font:{size:11} }, grid: { display:false } }
+          }
+        }
       });
     }
   }
+
+  // Gráfico de pizza — apenas tipos ativos
+  const ctxD = document.getElementById('chartDashCategoria');
+  if (ctxD) {
+    if (charts.dashCat) charts.dashCat.destroy();
+    if (tiposAtivos.length > 0) {
+      charts.dashCat = new Chart(ctxD, {
+        type: 'doughnut',
+        data: {
+          labels: tiposAtivos.map(t => t.label),
+          datasets: [{ data: tiposAtivos.map(t => totaisMap[t.key]),
+            backgroundColor: tiposAtivos.map(t => t.corHex), borderWidth: 0 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '65%',
+          plugins: { legend: { position:'bottom',
+            labels: { color:labelColor, font:{size:11}, padding:14, usePointStyle:true } } }
+        }
+      });
+    }
+  }
+
+  showToast('Dashboard atualizado!', 'success');
 }
 
 // ── NAVEGAÇÃO ──────────────────────────────────
@@ -1316,7 +1451,7 @@ function navigateTo(page) {
   document.getElementById('topbarTitle').textContent = pageTitles[page] || page;
   currentPage = page;
   if (window.innerWidth < 768) document.getElementById('sidebar').classList.remove('open');
-  if (page === 'dashboard') setTimeout(renderGraficos, 50);
+  if (page === 'dashboard') setTimeout(initDashboard, 50);
 }
 
 function toggleSidebar() {
@@ -1428,4 +1563,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+  // Pré-selecionar mês atual no relatório
+  const relMes = document.getElementById('relMes');
+  if (relMes) relMes.value = new Date().getMonth() + 1;
 });
