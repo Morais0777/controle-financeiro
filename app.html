@@ -287,7 +287,7 @@
         <!-- CONFIGURAÇÕES -->
         <div id="page-configuracoes" class="page">
           <div class="page-header"><h2>Configurações</h2></div>
-          <div class="cfg-tabs-bar">
+          <div id="cfgTabsBar" style="display:flex;gap:2px;background:var(--surface-alt);border-radius:var(--radius);padding:3px;margin-bottom:24px;border:1px solid var(--border)">
             <button class="cfg-tab active" onclick="showCfgTab('perfil')">Perfil</button>
             <button class="cfg-tab" onclick="showCfgTab('categorias')">Categorias</button>
             <button class="cfg-tab" onclick="showCfgTab('fixos')">Itens fixos</button>
@@ -296,7 +296,7 @@
 
           <!-- ABA PERFIL -->
           <div id="cfg-perfil" class="cfg-panel">
-            <div class="cfg-grid-2">
+            <div id="cfgGridPerfil" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
               <div class="card">
                 <div class="card-title">Meu perfil</div>
                 <div class="form-group">
@@ -324,7 +324,7 @@
 
           <!-- ABA CATEGORIAS -->
           <div id="cfg-categorias" class="cfg-panel" style="display:none">
-            <div class="cfg-grid-form">
+            <div id="cfgGridCat" style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start">
               <div class="card">
                 <div class="card-title">Nova categoria</div>
                 <div class="form-group">
@@ -374,7 +374,7 @@
 
           <!-- ABA ITENS FIXOS -->
           <div id="cfg-fixos" class="cfg-panel" style="display:none">
-            <div class="cfg-grid-form">
+            <div id="cfgGridFixos" style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start">
               <div class="card">
                 <div class="card-title">Novo item fixo</div>
                 <div class="form-group">
@@ -421,7 +421,7 @@
 
           <!-- ABA COMPETÊNCIAS -->
           <div id="cfg-competencias" class="cfg-panel" style="display:none">
-            <div class="cfg-grid-2">
+            <div id="cfgGridComp" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
               <div class="card">
                 <div class="card-title">Criar competências retroativas</div>
                 <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6">
@@ -536,5 +536,31 @@
   <script src="utils/helpers.js"></script>
   <script src="js/app.js"></script>
   <script src="js/relatorios.js"></script>
+
+  <script>
+    // Responsividade configurações — aplicada por JS, sem depender de CSS cache
+    function aplicarLayoutCfgMobile() {
+      const mobile = window.innerWidth <= 768;
+      const tabsBar   = document.getElementById('cfgTabsBar');
+      const gridPerf  = document.getElementById('cfgGridPerfil');
+      const gridCat   = document.getElementById('cfgGridCat');
+      const gridFixos = document.getElementById('cfgGridFixos');
+      const gridComp  = document.getElementById('cfgGridComp');
+
+      if (tabsBar) {
+        tabsBar.style.width = mobile ? '100%' : 'fit-content';
+        tabsBar.querySelectorAll('.cfg-tab').forEach(t => {
+          t.style.flex = mobile ? '1' : '';
+          t.style.textAlign = mobile ? 'center' : '';
+        });
+      }
+      if (gridPerf)  gridPerf.style.gridTemplateColumns  = mobile ? '1fr' : '1fr 1fr';
+      if (gridCat)   gridCat.style.gridTemplateColumns   = mobile ? '1fr' : '340px 1fr';
+      if (gridFixos) gridFixos.style.gridTemplateColumns = mobile ? '1fr' : '340px 1fr';
+      if (gridComp)  gridComp.style.gridTemplateColumns  = mobile ? '1fr' : '1fr 1fr';
+    }
+    document.addEventListener('DOMContentLoaded', aplicarLayoutCfgMobile);
+    window.addEventListener('resize', aplicarLayoutCfgMobile);
+  </script>
 </body>
 </html>
