@@ -1300,14 +1300,17 @@ async function renderDashboard() {
   // Calcular range de datas
   let inicio, fim, periodoLabel;
   if (tipo === 'mensal') {
+    const ultimoDiaMes = new Date(ano, mes, 0).getDate();
     inicio = `${ano}-${String(mes).padStart(2,'0')}-01`;
-    fim    = `${ano}-${String(mes).padStart(2,'0')}-31`;
+    fim    = `${ano}-${String(mes).padStart(2,'0')}-${String(ultimoDiaMes).padStart(2,'0')}`;
     periodoLabel = `${mesesNomes[mes-1]} de ${ano}`;
   } else if (tipo === 'trimestral') {
     const mesInicio = (trim - 1) * 3 + 1;
     const mesFim    = trim * 3;
+    // Último dia real do mês final (dia 0 do mês seguinte = último dia do mês atual)
+    const ultimoDia = new Date(ano, mesFim, 0).getDate();
     inicio = `${ano}-${String(mesInicio).padStart(2,'0')}-01`;
-    fim    = `${ano}-${String(mesFim).padStart(2,'0')}-31`;
+    fim    = `${ano}-${String(mesFim).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`;
     const nomesTrim = ['1º Trimestre (Jan–Mar)','2º Trimestre (Abr–Jun)',
                        '3º Trimestre (Jul–Set)','4º Trimestre (Out–Dez)'];
     periodoLabel = `${nomesTrim[trim-1]} de ${ano}`;
