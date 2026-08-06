@@ -555,6 +555,50 @@
 .spinner.visible { display: block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── Configurações — tabs e grids responsivos ── */
+.cfg-tabs-bar {
+  display: flex;
+  gap: 2px;
+  background: var(--surface-alt);
+  border-radius: var(--radius);
+  padding: 3px;
+  margin-bottom: 24px;
+  width: fit-content;
+  border: 1px solid var(--border);
+}
+
+/* Grid 2 colunas iguais (Perfil, Competências) */
+.cfg-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Grid formulário + lista (Categorias, Itens fixos) */
+.cfg-grid-form {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  /* Tabs ocupam toda a largura e cada botão cresce igualmente */
+  .cfg-tabs-bar {
+    width: 100%;
+  }
+  .cfg-tabs-bar .cfg-tab {
+    flex: 1;
+    text-align: center;
+  }
+
+  /* Todos os grids de configurações viram coluna única */
+  .cfg-grid-2,
+  .cfg-grid-form {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ── Grid resumo lançamentos ── */
 .lanc-resumo-grid {
   display: flex;
