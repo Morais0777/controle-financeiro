@@ -8,6 +8,12 @@
   <link rel="stylesheet" href="css/reset.css" />
   <link rel="stylesheet" href="css/global.css" />
   <link rel="stylesheet" href="css/home.css" />
+  <style>
+    .cfg-tabs-bar{display:flex;gap:2px;background:var(--surface-alt);border-radius:var(--radius);padding:3px;margin-bottom:24px;width:fit-content;border:1px solid var(--border)}
+    .cfg-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .cfg-grid-form{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
+    @media(max-width:768px){.cfg-tabs-bar{width:100%}.cfg-tabs-bar .cfg-tab{flex:1;text-align:center}.cfg-grid-2,.cfg-grid-form{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
 
@@ -281,7 +287,7 @@
         <!-- CONFIGURAÇÕES -->
         <div id="page-configuracoes" class="page">
           <div class="page-header"><h2>Configurações</h2></div>
-          <div style="display:flex;gap:2px;background:var(--surface-alt);border-radius:var(--radius);padding:3px;margin-bottom:24px;width:fit-content;border:1px solid var(--border)">
+          <div class="cfg-tabs-bar">
             <button class="cfg-tab active" onclick="showCfgTab('perfil')">Perfil</button>
             <button class="cfg-tab" onclick="showCfgTab('categorias')">Categorias</button>
             <button class="cfg-tab" onclick="showCfgTab('fixos')">Itens fixos</button>
@@ -290,7 +296,7 @@
 
           <!-- ABA PERFIL -->
           <div id="cfg-perfil" class="cfg-panel">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div class="cfg-grid-2">
               <div class="card">
                 <div class="card-title">Meu perfil</div>
                 <div class="form-group">
@@ -318,7 +324,7 @@
 
           <!-- ABA CATEGORIAS -->
           <div id="cfg-categorias" class="cfg-panel" style="display:none">
-            <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start">
+            <div class="cfg-grid-form">
               <div class="card">
                 <div class="card-title">Nova categoria</div>
                 <div class="form-group">
@@ -368,7 +374,7 @@
 
           <!-- ABA ITENS FIXOS -->
           <div id="cfg-fixos" class="cfg-panel" style="display:none">
-            <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start">
+            <div class="cfg-grid-form">
               <div class="card">
                 <div class="card-title">Novo item fixo</div>
                 <div class="form-group">
@@ -415,7 +421,7 @@
 
           <!-- ABA COMPETÊNCIAS -->
           <div id="cfg-competencias" class="cfg-panel" style="display:none">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div class="cfg-grid-2">
               <div class="card">
                 <div class="card-title">Criar competências retroativas</div>
                 <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6">
