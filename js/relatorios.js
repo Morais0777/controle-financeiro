@@ -1,17 +1,15 @@
 // ================================================
 // RELATORIOS.JS — FinanceIQ v6
 // Geração de PDF profissional: Mensal · Trimestral · Anual
-// Reutiliza tiposConfig e lógica de período do Dashboard
 // ================================================
 
-// ── CONFIGURAÇÃO GLOBAL DE TIPOS ───────────────
 const REL_TIPOS_CONFIG = [
-  { key:'entrada',        label:'Entradas',      icon:'ti-trending-up',   corHex:'#0a7c42', bg:[240,253,244], cor:[10,124,66]   },
-  { key:'saida',          label:'Saídas',        icon:'ti-trending-down', corHex:'#c0392b', bg:[255,241,242], cor:[192,57,43]   },
-  { key:'cartao_credito', label:'Cartão',        icon:'ti-credit-card',   corHex:'#b45309', bg:[255,247,237], cor:[180,83,9]    },
-  { key:'investimento',   label:'Investimentos', icon:'ti-building-bank', corHex:'#1a56db', bg:[239,244,255], cor:[26,86,219]   },
-  { key:'emprestimo',     label:'Empréstimos',   icon:'ti-handshake',     corHex:'#6d28d9', bg:[245,243,255], cor:[109,40,217]  },
-  { key:'reserva',        label:'Reserva',       icon:'ti-shield-check',  corHex:'#0e7490', bg:[236,254,255], cor:[14,116,144]  },
+  { key:'entrada',        label:'Entradas',      corHex:'#0a7c42', bg:[240,253,244], cor:[10,124,66]   },
+  { key:'saida',          label:'Saídas',        corHex:'#c0392b', bg:[255,241,242], cor:[192,57,43]   },
+  { key:'cartao_credito', label:'Cartão',        corHex:'#b45309', bg:[255,247,237], cor:[180,83,9]    },
+  { key:'investimento',   label:'Investimentos', corHex:'#1a56db', bg:[239,244,255], cor:[26,86,219]   },
+  { key:'emprestimo',     label:'Empréstimos',   corHex:'#6d28d9', bg:[245,243,255], cor:[109,40,217]  },
+  { key:'reserva',        label:'Reserva',       corHex:'#0e7490', bg:[236,254,255], cor:[14,116,144]  },
 ];
 
 const REL_MESES = [
@@ -24,18 +22,23 @@ const REL_NOMES_TRIM = [
   '3º Trimestre (Jul–Set)', '4º Trimestre (Out–Dez)'
 ];
 
-// ── INICIALIZAÇÃO DA TELA ──────────────────────
+// ── Constantes de layout A4 ────────────────────
+const PDF_MARGIN   = 14;
+const PDF_W        = 210;
+const PDF_H        = 297;
+const PDF_CONTENT  = 182; // 210 - 14*2 = 182mm exatos
+const PDF_FOOTER_Y = 283;
+
+// ── INICIALIZAÇÃO ──────────────────────────────
 
 function initRelatorios() {
   const agora = new Date();
   const selMes  = document.getElementById('relMes');
   const selAno  = document.getElementById('relAno');
   const selTrim = document.getElementById('relTrimestre');
-
-  if (selMes) selMes.value = agora.getMonth() + 1;
-  if (selAno) selAno.value = agora.getFullYear();
+  if (selMes)  selMes.value  = agora.getMonth() + 1;
+  if (selAno)  selAno.value  = agora.getFullYear();
   if (selTrim) selTrim.value = Math.ceil((agora.getMonth() + 1) / 3);
-
   relAtualizarControles();
 }
 
@@ -44,26 +47,22 @@ function relAtualizarControles() {
   const ctrlMes       = document.getElementById('relCtrlMes');
   const ctrlTrimestre = document.getElementById('relCtrlTrimestre');
   if (!ctrlMes || !ctrlTrimestre) return;
-
   ctrlMes.style.display       = 'none';
   ctrlTrimestre.style.display = 'none';
-
   if (tipo === 'mensal')     ctrlMes.style.display       = 'flex';
   if (tipo === 'trimestral') ctrlTrimestre.style.display = 'flex';
 }
 
-// ── CÁLCULO DE RANGE DE DATAS ──────────────────
+// ── CÁLCULO DE PERÍODO ─────────────────────────
 
 function calcularRangePeriodo(tipo, mes, trim, ano) {
   let inicio, fim, label, nomeArquivo;
-
   if (tipo === 'mensal') {
     const ultimoDia = new Date(ano, mes, 0).getDate();
     inicio      = `${ano}-${String(mes).padStart(2,'0')}-01`;
     fim         = `${ano}-${String(mes).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`;
     label       = `${REL_MESES[mes - 1]} de ${ano}`;
     nomeArquivo = `FinanceIQ_Mensal_${REL_MESES[mes - 1]}_${ano}.pdf`;
-
   } else if (tipo === 'trimestral') {
     const mesInicio = (trim - 1) * 3 + 1;
     const mesFim    = trim * 3;
@@ -72,18 +71,16 @@ function calcularRangePeriodo(tipo, mes, trim, ano) {
     fim         = `${ano}-${String(mesFim).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`;
     label       = `${REL_NOMES_TRIM[trim - 1]} de ${ano}`;
     nomeArquivo = `FinanceIQ_${trim}_Trimestre_${ano}.pdf`;
-
   } else {
     inicio      = `${ano}-01-01`;
     fim         = `${ano}-12-31`;
     label       = `Ano de ${ano}`;
     nomeArquivo = `FinanceIQ_Anual_${ano}.pdf`;
   }
-
   return { inicio, fim, label, nomeArquivo };
 }
 
-// ── BUSCA DE DADOS NO SUPABASE ─────────────────
+// ── SUPABASE ───────────────────────────────────
 
 async function buscarDadosPeriodo(inicio, fim) {
   const { data, error } = await window.supabase
@@ -91,18 +88,14 @@ async function buscarDadosPeriodo(inicio, fim) {
     .eq('user_id', currentUser.id)
     .gte('data', inicio).lte('data', fim)
     .order('data', { ascending: true });
-
   if (error) { console.error('Erro ao buscar lançamentos:', error); return []; }
   return data || [];
 }
 
-// ── CÁLCULO DE TOTAIS ──────────────────────────
+// ── TOTAIS ─────────────────────────────────────
 
 function calcularTotaisPeriodo(lista) {
-  const totaisMap = {
-    entrada:0, saida:0, cartao_credito:0,
-    investimento:0, emprestimo:0, reserva:0
-  };
+  const totaisMap = { entrada:0, saida:0, cartao_credito:0, investimento:0, emprestimo:0, reserva:0 };
   lista.forEach(l => {
     const tipo = l.tipo?.trim();
     if (tipo && totaisMap[tipo] !== undefined)
@@ -113,22 +106,24 @@ function calcularTotaisPeriodo(lista) {
   return { ...totaisMap, totalSaidas, saldo };
 }
 
-// ── RENDERIZAÇÃO DE GRÁFICO OFFSCREEN ──────────
-// Escala de 2× para alta resolução no PDF (evita blur)
+// ── FORMATAÇÃO DE MOEDA ────────────────────────
+
+function formatCurrencyPDF(value) {
+  const num = parseFloat(String(value).replace(/[^\d.]/g, '')) || 0;
+  return new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' }).format(num);
+}
+
+// ── GRÁFICOS OFFSCREEN (escala 2× para nitidez) ─
 
 function gerarGraficoOffscreen(tipo, dados, opcoes = {}) {
   return new Promise(resolve => {
-    const escala = 2; // 2× para nitidez em PDF
-    const largura = (opcoes.width  || 700) * escala;
-    const altura  = (opcoes.height || 300) * escala;
-
-    const canvas = document.createElement('canvas');
-    canvas.width  = largura;
-    canvas.height = altura;
+    const escala  = 2;
+    const canvas  = document.createElement('canvas');
+    canvas.width  = (opcoes.width  || 700) * escala;
+    canvas.height = (opcoes.height || 300) * escala;
     canvas.style.cssText = 'position:absolute;left:-9999px;top:-9999px;visibility:hidden';
     document.body.appendChild(canvas);
 
-    // Escala o contexto para o fator 2×
     const ctx = canvas.getContext('2d');
     ctx.scale(escala, escala);
 
@@ -139,9 +134,7 @@ function gerarGraficoOffscreen(tipo, dados, opcoes = {}) {
         responsive: false,
         devicePixelRatio: escala,
         animation: { duration: 0 },
-        plugins: {
-          legend: opcoes.legend || { display: false },
-        },
+        plugins: { legend: opcoes.legend || { display: false } },
         ...opcoes.chartOptions,
       }
     });
@@ -157,20 +150,15 @@ function gerarGraficoOffscreen(tipo, dados, opcoes = {}) {
   });
 }
 
-// ── GRÁFICO DE BARRAS (totais por tipo) ──────────
-// Melhorias:
-//  • Canvas maior (1000×380) para mais espaço
-//  • Eixo Y com formatação monetária abreviada
-//  • Padding generoso nas bordas do canvas
-//  • Rótulos de valor exibidos acima de cada barra
-//  • Fonte maior nos eixos para legibilidade
+// ── GRÁFICO DE BARRAS ──────────────────────────
 
 async function gerarGraficoBarras(tiposAtivos, totaisMap) {
+  const maxVal = Math.max(...tiposAtivos.map(t => totaisMap[t.key]), 0);
   const dados = {
     labels: tiposAtivos.map(t => t.label),
     datasets: [{
       data: tiposAtivos.map(t => totaisMap[t.key]),
-      backgroundColor: tiposAtivos.map(t => t.corHex + 'ee'), // leve transparência
+      backgroundColor: tiposAtivos.map(t => t.corHex + 'dd'),
       borderColor:     tiposAtivos.map(t => t.corHex),
       borderWidth: 1.5,
       borderRadius: 8,
@@ -179,46 +167,25 @@ async function gerarGraficoBarras(tiposAtivos, totaisMap) {
       categoryPercentage: 0.7,
     }]
   };
-
-  // Valor máximo para dar folga no topo do eixo Y
-  const maxVal = Math.max(...tiposAtivos.map(t => totaisMap[t.key]), 0);
-
   return gerarGraficoOffscreen('bar', dados, {
     width: 1000, height: 400,
     chartOptions: {
-      layout: {
-        padding: { top: 40, right: 30, bottom: 10, left: 10 }
-      },
-      plugins: {
-        legend: { display: false },
-        // Rótulos de valor acima das barras
-        datalabels: false, // não usamos o plugin — implementamos via afterDraw
-      },
+      layout: { padding: { top: 40, right: 30, bottom: 10, left: 10 } },
       scales: {
         y: {
           beginAtZero: true,
           suggestedMax: maxVal * 1.2,
           ticks: {
             color: '#64748b',
-            font: { size: 13, family: 'helvetica' },
+            font: { size: 13 },
             maxTicksLimit: 6,
-            callback: (value) => {
-              if (value >= 1000) return 'R$' + (value / 1000).toFixed(0) + 'k';
-              return 'R$' + value.toFixed(0);
-            }
+            callback: v => v >= 1000 ? 'R$' + (v/1000).toFixed(0) + 'k' : 'R$' + v.toFixed(0)
           },
-          grid: {
-            color: '#e2e8f0',
-            lineWidth: 1,
-          },
-          border: { dash: [4, 4], color: 'transparent' }
+          grid: { color: '#e2e8f0' },
+          border: { dash: [4,4], color: 'transparent' }
         },
         x: {
-          ticks: {
-            color: '#475569',
-            font: { size: 13, family: 'helvetica', weight: 'bold' },
-            maxRotation: 0,
-          },
+          ticks: { color: '#475569', font: { size: 13, weight: 'bold' }, maxRotation: 0 },
           grid: { display: false },
           border: { color: '#e2e8f0' }
         }
@@ -227,12 +194,7 @@ async function gerarGraficoBarras(tiposAtivos, totaisMap) {
   });
 }
 
-// ── GRÁFICO DE ROSCA (distribuição) ──────────────
-// Melhorias:
-//  • Canvas bem maior (700×440) para legenda legível
-//  • Legenda com fonte maior e padding generoso
-//  • Cutout menor (55%) para aros mais visíveis
-//  • Margem interna generosa
+// ── GRÁFICO DE ROSCA ───────────────────────────
 
 async function gerarGraficoDoughnut(tiposAtivos, totaisMap) {
   const dados = {
@@ -242,10 +204,8 @@ async function gerarGraficoDoughnut(tiposAtivos, totaisMap) {
       backgroundColor: tiposAtivos.map(t => t.corHex),
       borderColor: '#ffffff',
       borderWidth: 3,
-      hoverOffset: 6,
     }]
   };
-
   return gerarGraficoOffscreen('doughnut', dados, {
     width: 700, height: 440,
     legend: {
@@ -253,27 +213,22 @@ async function gerarGraficoDoughnut(tiposAtivos, totaisMap) {
       position: 'bottom',
       labels: {
         color: '#475569',
-        font: { size: 14, family: 'helvetica' },
+        font: { size: 14 },
         padding: 20,
         usePointStyle: true,
         pointStyleWidth: 12,
-        boxHeight: 10,
         generateLabels: (chart) => {
           const ds    = chart.data.datasets[0];
-          const total = ds.data.reduce((a, b) => a + b, 0);
-          return chart.data.labels.map((label, i) => {
-            const val = ds.data[i];
-            const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
-            return {
-              text: `${label}  ${pct}%`,
-              fillStyle: ds.backgroundColor[i],
-              strokeStyle: '#ffffff',
-              lineWidth: 0,
-              pointStyle: 'circle',
-              index: i,
-              hidden: false,
-            };
-          });
+          const total = ds.data.reduce((a,b) => a+b, 0);
+          return chart.data.labels.map((label, i) => ({
+            text: `${label}  ${total > 0 ? ((ds.data[i]/total)*100).toFixed(1) : '0.0'}%`,
+            fillStyle: ds.backgroundColor[i],
+            strokeStyle: '#fff',
+            lineWidth: 0,
+            pointStyle: 'circle',
+            index: i,
+            hidden: false,
+          }));
         }
       }
     },
@@ -284,104 +239,81 @@ async function gerarGraficoDoughnut(tiposAtivos, totaisMap) {
   });
 }
 
-// ── SEÇÕES DO PDF ──────────────────────────────
-
-// Constantes de layout
-const PDF_MARGIN   = 14;   // margem lateral mm
-const PDF_W        = 210;  // largura A4 mm
-const PDF_H        = 297;  // altura A4 mm
-const PDF_CONTENT  = PDF_W - PDF_MARGIN * 2; // 182mm de conteúdo
-const PDF_FOOTER_Y = 285;  // posição Y do rodapé
-
-// ── Cabeçalho ─────────────────────────────────
+// ── SEÇÃO: CABEÇALHO ──────────────────────────
 
 function secaoCabecalho(doc, W, username, periodoLabel) {
-  // Fundo azul
   doc.setFillColor(26, 86, 219);
   doc.rect(0, 0, W, 46, 'F');
 
-  // Logo mark
   doc.setFillColor(255, 255, 255);
   doc.setGState(new doc.GState({ opacity: 0.15 }));
   doc.roundedRect(14, 9, 28, 28, 4, 4, 'F');
   doc.setGState(new doc.GState({ opacity: 1 }));
 
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(17);
-  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(17); doc.setFont('helvetica', 'bold');
   doc.text('Fi', 28, 26, { align: 'center' });
 
-  // Nome + subtítulo
-  doc.setFontSize(21);
-  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(21); doc.setFont('helvetica', 'bold');
   doc.text('FinanceIQ', 48, 21);
 
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9.5); doc.setFont('helvetica', 'normal');
   doc.text('Relatório Financeiro Pessoal', 48, 29);
 
   const agora = new Date();
   doc.setFontSize(8.5);
-  doc.text(
-    `Gerado em ${agora.toLocaleDateString('pt-BR')} às ${agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`,
-    48, 37
-  );
+  doc.text(`Gerado em ${agora.toLocaleDateString('pt-BR')} às ${agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`, 48, 37);
 
-  // Período e usuário (direita)
-  doc.setFontSize(12.5);
-  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12.5); doc.setFont('helvetica', 'bold');
   doc.text(periodoLabel, W - 14, 21, { align: 'right' });
 
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
   doc.text(username, W - 14, 30, { align: 'right' });
   doc.text(currentUser.email, W - 14, 38, { align: 'right' });
 
-  return 58; // yPos após o cabeçalho (espaço extra)
+  return 58;
 }
 
-// ── Título de seção ────────────────────────────
+// ── SEÇÃO: TÍTULO ─────────────────────────────
 
 function secaoTitulo(doc, texto, yPos) {
   doc.setTextColor(30, 37, 65);
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11); doc.setFont('helvetica', 'bold');
   doc.text(texto, PDF_MARGIN, yPos);
 
   doc.setDrawColor(26, 86, 219);
   doc.setLineWidth(0.5);
-  doc.line(PDF_MARGIN, yPos + 3.5, PDF_MARGIN + 30, yPos + 3.5);
+  doc.line(PDF_MARGIN, yPos + 3.5, PDF_MARGIN + 28, yPos + 3.5);
 
   doc.setDrawColor(228, 231, 238);
   doc.setLineWidth(0.3);
-  doc.line(PDF_MARGIN + 30, yPos + 3.5, PDF_W - PDF_MARGIN, yPos + 3.5);
+  doc.line(PDF_MARGIN + 28, yPos + 3.5, PDF_W - PDF_MARGIN, yPos + 3.5);
 
   return yPos + 12;
 }
 
-// ── Cards de resumo ────────────────────────────
+// ── SEÇÃO: CARDS DE RESUMO ────────────────────
 
 function secaoResumoCards(doc, W, totais, yPos) {
   yPos = secaoTitulo(doc, 'Resumo do período', yPos);
-
   const saldo = totais.saldo;
 
   const cards = [
-    { label:'Entradas',     valor: totais.entrada,      cor:[10,124,66],   bg:[240,253,244] },
-    { label:'Saídas',       valor: totais.totalSaidas,  cor:[192,57,43],   bg:[255,241,242] },
-    { label:'Saldo',        valor: saldo,
+    { label:'Entradas',    valor: totais.entrada,     cor:[10,124,66],   bg:[240,253,244] },
+    { label:'Saídas',      valor: totais.totalSaidas, cor:[192,57,43],   bg:[255,241,242] },
+    { label:'Saldo',       valor: saldo,
       cor: saldo >= 0 ? [10,124,66] : [192,57,43],
       bg:  saldo >= 0 ? [240,253,244] : [255,241,242] },
-    ...(totais.cartao_credito > 0 ? [{ label:'Cartão',        valor: totais.cartao_credito, cor:[180,83,9],  bg:[255,247,237] }] : []),
-    ...(totais.investimento   > 0 ? [{ label:'Investimentos', valor: totais.investimento,   cor:[26,86,219], bg:[239,244,255] }] : []),
-    ...(totais.emprestimo     > 0 ? [{ label:'Empréstimos',   valor: totais.emprestimo,     cor:[109,40,217],bg:[245,243,255] }] : []),
-    ...(totais.reserva        > 0 ? [{ label:'Reserva',       valor: totais.reserva,        cor:[14,116,144],bg:[236,254,255] }] : []),
+    ...(totais.cartao_credito > 0 ? [{ label:'Cartão',        valor: totais.cartao_credito, cor:[180,83,9],   bg:[255,247,237] }] : []),
+    ...(totais.investimento   > 0 ? [{ label:'Investimentos', valor: totais.investimento,   cor:[26,86,219],  bg:[239,244,255] }] : []),
+    ...(totais.emprestimo     > 0 ? [{ label:'Empréstimos',   valor: totais.emprestimo,     cor:[109,40,217], bg:[245,243,255] }] : []),
+    ...(totais.reserva        > 0 ? [{ label:'Reserva',       valor: totais.reserva,        cor:[14,116,144], bg:[236,254,255] }] : []),
   ];
 
   const cols   = 3;
-  const cardW  = (PDF_CONTENT - (cols - 1) * 7) / cols;
-  const cardH  = 24;
   const gapCol = 7;
+  const cardW  = (PDF_CONTENT - (cols - 1) * gapCol) / cols; // ~56mm cada
+  const cardH  = 24;
   const gapRow = 6;
 
   cards.forEach((c, i) => {
@@ -390,24 +322,18 @@ function secaoResumoCards(doc, W, totais, yPos) {
     const x   = PDF_MARGIN + col * (cardW + gapCol);
     const y   = yPos + row * (cardH + gapRow);
 
-    // Fundo arredondado
     doc.setFillColor(...c.bg);
     doc.roundedRect(x, y, cardW, cardH, 3, 3, 'F');
 
-    // Barra de cor lateral
     doc.setFillColor(...c.cor);
     doc.roundedRect(x, y, 3, cardH, 1.5, 1.5, 'F');
 
-    // Label
     doc.setTextColor(100, 116, 139);
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
     doc.text(c.label, x + 8, y + 9);
 
-    // Valor
     doc.setTextColor(...c.cor);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold');
     doc.text(formatCurrencyPDF(c.valor), x + 8, y + 19);
   });
 
@@ -415,77 +341,50 @@ function secaoResumoCards(doc, W, totais, yPos) {
   return yPos + linhas * (cardH + gapRow) + 8;
 }
 
-// ── Gráficos ───────────────────────────────────
+// ── SEÇÃO: GRÁFICOS ───────────────────────────
 
 async function secaoGraficos(doc, W, tiposAtivos, totaisMap, yPos) {
   if (tiposAtivos.length === 0) return yPos;
 
-  // ── Gráfico de Barras ──────────────────────
-  // Altura estimada do bloco inteiro: ~90mm
-  const alturaBloco = 90;
-  if (yPos + alturaBloco > PDF_FOOTER_Y - 10) {
-    doc.addPage();
-    yPos = 20;
-  }
-
+  // Gráfico de barras
+  if (yPos + 90 > PDF_FOOTER_Y) { doc.addPage(); yPos = 20; }
   yPos = secaoTitulo(doc, 'Distribuição financeira', yPos);
 
   const imgBarras = await gerarGraficoBarras(tiposAtivos, totaisMap);
-  const barW = PDF_CONTENT;        // 182mm
-  const barH = Math.round(barW * 0.40); // proporção ~73mm
-
+  const barW = PDF_CONTENT;
+  const barH = Math.round(barW * 0.40); // ~73mm
   doc.addImage(imgBarras, 'PNG', PDF_MARGIN, yPos, barW, barH);
   yPos += barH + 14;
 
-  // ── Gráfico de Rosca ──────────────────────
-  // O gráfico inclui legenda interna. Bloco estimado: ~90mm
-  const alturaRosca = 92;
-  if (yPos + alturaRosca > PDF_FOOTER_Y - 10) {
-    doc.addPage();
-    yPos = 20;
-  }
+  // Gráfico de rosca
+  if (yPos + 90 > PDF_FOOTER_Y) { doc.addPage(); yPos = 20; }
 
-  // Label acima da rosca
   doc.setTextColor(100, 116, 139);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
   doc.text('Distribuição por tipo', W / 2, yPos - 2, { align: 'center' });
 
-  // Gera imagem de 700×440px, insere proporcional centralizado
   const imgRosca = await gerarGraficoDoughnut(tiposAtivos, totaisMap);
-  const roscaW   = 130;                 // mm no PDF
-  const roscaH   = Math.round(roscaW * (440 / 700)); // ~82mm, mantém proporção
-  const roscaX   = (W - roscaW) / 2;   // centralizado
-
+  const roscaW   = 128;
+  const roscaH   = Math.round(roscaW * (440 / 700)); // ~80mm
+  const roscaX   = (W - roscaW) / 2;
   doc.addImage(imgRosca, 'PNG', roscaX, yPos, roscaW, roscaH);
   yPos += roscaH + 12;
 
   return yPos;
 }
 
-// ── Tabela de lançamentos ─────────────────────
-// Melhorias:
-//  • Colunas redesenhadas: Data 22 | Descrição 62 | Tipo 28 | Valor 40 | Obs 30
-//  • overflow: 'linebreak' em todas as colunas de texto
-//  • Cabeçalho repetido em cada página
-//  • Verificação de espaço antes de iniciar (≥60mm para pelo menos 3 linhas)
+// ── SEÇÃO: TABELA ─────────────────────────────
+// Larguras: 22 + 68 + 26 + 38 + 28 = 182mm (= PDF_CONTENT exato)
 
 function secaoTabela(doc, W, lista, yPos) {
-  // Espaço mínimo para iniciar a tabela (cabeçalho + pelo menos 1 linha)
-  const espacoMin = 55;
-  if (yPos + espacoMin > PDF_FOOTER_Y) {
-    doc.addPage();
-    yPos = 20;
-  }
-
+  if (yPos + 55 > PDF_FOOTER_Y) { doc.addPage(); yPos = 20; }
   yPos = secaoTitulo(doc, `Lançamentos do período (${lista.length})`, yPos);
 
   if (lista.length === 0) {
     doc.setFillColor(248, 249, 252);
     doc.roundedRect(PDF_MARGIN, yPos, PDF_CONTENT, 18, 3, 3, 'F');
     doc.setTextColor(150, 160, 175);
-    doc.setFontSize(9.5);
-    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5); doc.setFont('helvetica', 'normal');
     doc.text('Nenhum lançamento registrado neste período.', W / 2, yPos + 11, { align: 'center' });
     return yPos + 26;
   }
@@ -495,18 +394,12 @@ function secaoTabela(doc, W, lista, yPos) {
     investimento:'Investimento', emprestimo:'Empréstimo', reserva:'Reserva'
   };
   const tipoColors = {
-    entrada:       [10,124,66],
-    saida:         [192,57,43],
-    cartao_credito:[180,83,9],
-    investimento:  [26,86,219],
-    emprestimo:    [109,40,217],
-    reserva:       [14,116,144],
+    entrada:[10,124,66], saida:[192,57,43], cartao_credito:[180,83,9],
+    investimento:[26,86,219], emprestimo:[109,40,217], reserva:[14,116,144],
   };
-
-  // Prefixos de sinal
   const sinais = {
-    entrada: '+', saida: '−', cartao_credito: '−',
-    investimento: '−', emprestimo: '−', reserva: '−',
+    entrada:'+', saida:'−', cartao_credito:'−',
+    investimento:'−', emprestimo:'−', reserva:'−',
   };
 
   const rows = lista.map(l => [
@@ -517,23 +410,22 @@ function secaoTabela(doc, W, lista, yPos) {
     l.observacao || '—'
   ]);
 
-  // Larguras: soma = 182mm (PDF_CONTENT)
-  // Data 22 | Descrição 62 | Tipo 28 | Valor 42 | Observação 28
   doc.autoTable({
     startY: yPos,
     head: [['Data', 'Descrição', 'Tipo', 'Valor', 'Observação']],
     body: rows,
     theme: 'plain',
+    // Largura total exata: 22+68+26+38+28 = 182 = PDF_CONTENT
     tableWidth: PDF_CONTENT,
-    margin: { left: PDF_MARGIN, right: PDF_MARGIN },
+    margin: { left: PDF_MARGIN, right: PDF_MARGIN, top: 20, bottom: 20 },
     styles: {
       fontSize: 8.5,
-      cellPadding: { top: 4, right: 5, bottom: 4, left: 5 },
+      cellPadding: { top: 4, right: 4, bottom: 4, left: 4 },
       textColor: [30, 37, 65],
       lineColor: [228, 231, 238],
       lineWidth: 0.3,
       font: 'helvetica',
-      overflow: 'linebreak',  // ← quebra de linha automática
+      overflow: 'linebreak',
       valign: 'middle',
     },
     headStyles: {
@@ -541,61 +433,37 @@ function secaoTabela(doc, W, lista, yPos) {
       textColor: [80, 95, 130],
       fontStyle: 'bold',
       fontSize: 8,
-      cellPadding: { top: 5, right: 5, bottom: 5, left: 5 },
+      cellPadding: { top: 5, right: 4, bottom: 5, left: 4 },
     },
-    alternateRowStyles: {
-      fillColor: [249, 250, 253],
-    },
+    alternateRowStyles: { fillColor: [249, 250, 253] },
     columnStyles: {
-      0: { cellWidth: 22, halign: 'left'  },   // Data
-      1: { cellWidth: 64, halign: 'left'  },   // Descrição (maior)
-      2: { cellWidth: 28, halign: 'left'  },   // Tipo
-      3: { cellWidth: 40, halign: 'right' },   // Valor (alinhado à direita)
+      0: { cellWidth: 22, halign: 'left'  },  // Data
+      1: { cellWidth: 68, halign: 'left'  },  // Descrição
+      2: { cellWidth: 26, halign: 'left'  },  // Tipo
+      3: { cellWidth: 38, halign: 'right' },  // Valor
       4: { cellWidth: 28, halign: 'left',
-           textColor: [140, 150, 165]       },  // Observação (muted)
+           textColor: [140, 150, 165]      },  // Observação
     },
     didParseCell: (data) => {
       if (data.section !== 'body') return;
-      const lancamento = lista[data.row.index];
-      if (!lancamento) return;
-      const tipo = lancamento.tipo;
-      const cor  = tipoColors[tipo] || [30, 37, 65];
-
-      // Coluna valor: cor do tipo + negrito
+      const l   = lista[data.row.index];
+      if (!l) return;
+      const cor = tipoColors[l.tipo] || [30, 37, 65];
       if (data.column.index === 3) {
         data.cell.styles.textColor = cor;
         data.cell.styles.fontStyle = 'bold';
-        data.cell.styles.fontSize  = 8.5;
       }
-      // Coluna tipo: cor do tipo
       if (data.column.index === 2) {
         data.cell.styles.textColor = cor;
         data.cell.styles.fontStyle = 'bold';
         data.cell.styles.fontSize  = 8;
       }
     },
-    // Linha separadora entre grupos de data
-    didDrawCell: (data) => {
-      if (data.section !== 'body' || data.column.index !== 0) return;
-      const i = data.row.index;
-      if (i > 0 && rows[i][0] !== rows[i - 1][0]) {
-        // Linha sutil entre datas diferentes
-        doc.setDrawColor(210, 218, 230);
-        doc.setLineWidth(0.2);
-        doc.line(
-          PDF_MARGIN, data.cell.y,
-          PDF_MARGIN + PDF_CONTENT, data.cell.y
-        );
-      }
-    },
     showHead: 'everyPage',
-    // Rodapé de continuação em novas páginas
     didDrawPage: (data) => {
       if (data.pageNumber > 1) {
-        // Pequeno indicador de continuação no topo
         doc.setTextColor(150, 160, 175);
-        doc.setFontSize(7.5);
-        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(7.5); doc.setFont('helvetica', 'italic');
         doc.text('(continuação)', PDF_W - PDF_MARGIN, data.settings.startY - 2, { align: 'right' });
       }
     },
@@ -604,46 +472,34 @@ function secaoTabela(doc, W, lista, yPos) {
   return doc.lastAutoTable.finalY + 4;
 }
 
-// ── Totais finais e resumo por tipo ───────────
+// ── SEÇÃO: TOTAIS FINAIS ──────────────────────
 
 function secaoTotaisFinais(doc, W, lista, totais, yPos) {
   const saldo = totais.saldo;
 
-  // Verifica espaço mínimo para a barra de saldo
-  if (yPos + 18 > PDF_FOOTER_Y) {
-    doc.addPage();
-    yPos = 20;
-  }
+  if (yPos + 18 > PDF_FOOTER_Y) { doc.addPage(); yPos = 20; }
 
-  // Barra de saldo (azul)
+  // Barra de saldo
   doc.setFillColor(26, 86, 219);
   doc.roundedRect(PDF_MARGIN, yPos + 2, PDF_CONTENT, 15, 3, 3, 'F');
-
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(8.5);
-  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
   doc.text(`${lista.length} lançamento${lista.length !== 1 ? 's' : ''} no período`, PDF_MARGIN + 6, yPos + 11.5);
-
-  doc.setFontSize(10.5);
-  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10.5); doc.setFont('helvetica', 'bold');
   doc.text(`Saldo: ${formatCurrencyPDF(saldo)}`, W - PDF_MARGIN - 5, yPos + 11.5, { align: 'right' });
 
   yPos += 24;
 
-  // Subtítulo "Total por tipo"
-  const alturaResumo = 40 + Math.ceil(REL_TIPOS_CONFIG.filter(t => totais[t.key] > 0).length / 3) * 26;
-  if (yPos + alturaResumo > PDF_FOOTER_Y) {
-    doc.addPage();
-    yPos = 20;
-  }
+  // Total por tipo
+  const tiposComMovimento = REL_TIPOS_CONFIG.filter(t => totais[t.key] > 0);
+  const alturaResumo = 14 + Math.ceil(tiposComMovimento.length / 3) * 26;
+  if (yPos + alturaResumo > PDF_FOOTER_Y) { doc.addPage(); yPos = 20; }
 
   doc.setTextColor(30, 37, 65);
-  doc.setFontSize(9.5);
-  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9.5); doc.setFont('helvetica', 'bold');
   doc.text('Total por tipo de lançamento', PDF_MARGIN, yPos + 8);
   yPos += 14;
 
-  const tiposComMovimento = REL_TIPOS_CONFIG.filter(t => totais[t.key] > 0);
   if (tiposComMovimento.length > 0) {
     const cols  = Math.min(tiposComMovimento.length, 3);
     const itemW = (PDF_CONTENT - (cols - 1) * 6) / cols;
@@ -657,18 +513,15 @@ function secaoTotaisFinais(doc, W, lista, totais, yPos) {
 
       doc.setFillColor(...t.bg);
       doc.roundedRect(x, y, itemW, itemH, 2.5, 2.5, 'F');
-
       doc.setFillColor(...t.cor);
       doc.roundedRect(x, y, 3, itemH, 1.5, 1.5, 'F');
 
       doc.setTextColor(100, 116, 139);
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7); doc.setFont('helvetica', 'normal');
       doc.text(t.label, x + 7, y + 7.5);
 
       doc.setTextColor(...t.cor);
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10); doc.setFont('helvetica', 'bold');
       doc.text(formatCurrencyPDF(totais[t.key]), x + 7, y + 16);
     });
 
@@ -678,22 +531,17 @@ function secaoTotaisFinais(doc, W, lista, totais, yPos) {
   return yPos;
 }
 
-// ── Rodapé em todas as páginas ─────────────────
+// ── SEÇÃO: RODAPÉ ─────────────────────────────
 
 function secaoRodapePaginas(doc, W) {
   const total = doc.getNumberOfPages();
   for (let i = 1; i <= total; i++) {
     doc.setPage(i);
-
-    // Linha separadora
     doc.setDrawColor(228, 231, 238);
     doc.setLineWidth(0.4);
     doc.line(PDF_MARGIN, PDF_FOOTER_Y, W - PDF_MARGIN, PDF_FOOTER_Y);
-
-    // Textos do rodapé
     doc.setTextColor(170, 175, 190);
-    doc.setFontSize(7.5);
-    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
     doc.text('FinanceIQ — Controle Financeiro Pessoal', PDF_MARGIN, PDF_FOOTER_Y + 5);
     doc.text(`Página ${i} de ${total}`, W - PDF_MARGIN, PDF_FOOTER_Y + 5, { align: 'right' });
   }
@@ -710,37 +558,26 @@ async function gerarRelatorio() {
   showToast('Gerando relatório...', 'info', 10000);
 
   try {
-    // ── 1. Dados do perfil ─────────────────────
     const { data: profile } = await window.supabase
       .from('profiles').select('username').eq('id', currentUser.id).single();
     const username = profile?.username || currentUser.email.split('@')[0];
 
-    // ── 2. Range de datas ──────────────────────
     const { inicio, fim, label: periodoLabel, nomeArquivo } = calcularRangePeriodo(tipo, mes, trim, ano);
-
-    // ── 3. Busca lançamentos ───────────────────
-    const lista = await buscarDadosPeriodo(inicio, fim);
-
-    // ── 4. Calcula totais ──────────────────────
+    const lista       = await buscarDadosPeriodo(inicio, fim);
     const totais      = calcularTotaisPeriodo(lista);
     const tiposAtivos = REL_TIPOS_CONFIG.filter(t => totais[t.key] > 0);
 
-    // ── 5. Inicializa jsPDF ────────────────────
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const W   = PDF_W;
 
-    // ── 6. Monta seções ────────────────────────
     let yPos = secaoCabecalho(doc, W, username, periodoLabel);
     yPos     = secaoResumoCards(doc, W, totais, yPos);
     yPos     = await secaoGraficos(doc, W, tiposAtivos, totais, yPos);
     yPos     = secaoTabela(doc, W, lista, yPos);
     yPos     = secaoTotaisFinais(doc, W, lista, totais, yPos);
-
-    // ── 7. Rodapé em todas as páginas ──────────
     secaoRodapePaginas(doc, W);
 
-    // ── 8. Salva o PDF ─────────────────────────
     doc.save(nomeArquivo);
     showToast(`PDF gerado: ${nomeArquivo}`, 'success');
 
@@ -748,12 +585,4 @@ async function gerarRelatorio() {
     console.error('Erro ao gerar PDF:', err);
     showToast('Erro ao gerar o PDF. Tente novamente.', 'error');
   }
-}
-
-// ── FORMATAÇÃO DE MOEDA (sem depender do DOM) ──
-
-function formatCurrencyPDF(value) {
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency', currency: 'BRL'
-  }).format(value || 0);
 }
