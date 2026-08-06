@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FinanceIQ — Painel</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css" />  <link rel="stylesheet" href="css/variables.css?v=3" />
-  <link rel="stylesheet" href="css/reset.css?v=3" />
-  <link rel="stylesheet" href="css/global.css?v=3" />
-  <link rel="stylesheet" href="css/home.css?v=3" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css" />  <link rel="stylesheet" href="css/variables.css?v=4" />
+  <link rel="stylesheet" href="css/reset.css?v=4" />
+  <link rel="stylesheet" href="css/global.css?v=4" />
+  <link rel="stylesheet" href="css/home.css?v=4" />
   <style>
     .cfg-tabs-bar{display:flex;gap:2px;background:var(--surface-alt);border-radius:var(--radius);padding:3px;margin-bottom:24px;width:fit-content;border:1px solid var(--border)}
     .cfg-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -202,45 +202,85 @@
         <!-- DASHBOARD -->
         <div id="page-dashboard" class="page">
           <div class="page-header"><h2>Dashboard</h2></div>
-          <div class="kpi-grid" style="margin-bottom:24px">
-            <div class="kpi-card">
-              <div class="kpi-label"><i class="ti ti-trending-up"></i>Entradas</div>
-              <div class="kpi-value" id="dashEntradas">R$ 0,00</div>
+
+          <!-- Seletor de período -->
+          <div id="dashFiltro" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:24px">
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:14px;display:flex;align-items:center;gap:6px">
+              <i class="ti ti-adjustments-horizontal" style="color:var(--accent)"></i>Selecione o período
             </div>
-            <div class="kpi-card">
-              <div class="kpi-label"><i class="ti ti-trending-down"></i>Saídas</div>
-              <div class="kpi-value" id="dashSaidas">R$ 0,00</div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-label"><i class="ti ti-wallet"></i>Saldo</div>
-              <div class="kpi-value" id="dashSaldo">R$ 0,00</div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-label"><i class="ti ti-credit-card"></i>Cartão</div>
-              <div class="kpi-value" id="dashCartao">R$ 0,00</div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-label"><i class="ti ti-building-bank"></i>Investimentos</div>
-              <div class="kpi-value" id="dashInvestimentos">R$ 0,00</div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-label"><i class="ti ti-handshake"></i>Empréstimos</div>
-              <div class="kpi-value" id="dashEmprestimos">R$ 0,00</div>
-            </div>
-            <div class="kpi-card">
-              <div class="kpi-label"><i class="ti ti-shield-check"></i>Reserva</div>
-              <div class="kpi-value" id="dashReserva">R$ 0,00</div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+              <!-- Tipo de período -->
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Período</label>
+                <select id="dashTipoPeriodo" onchange="dashAtualizarControles()"
+                  style="padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-alt);color:var(--text-primary);font-size:13px;font-family:var(--font);cursor:pointer;min-width:140px">
+                  <option value="mensal">Mensal</option>
+                  <option value="trimestral">Trimestral</option>
+                  <option value="anual">Anual</option>
+                </select>
+              </div>
+              <!-- Mês (mensal) -->
+              <div id="dashCtrlMes" style="display:flex;flex-direction:column;gap:5px">
+                <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Mês</label>
+                <select id="dashMes"
+                  style="padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-alt);color:var(--text-primary);font-size:13px;font-family:var(--font);cursor:pointer;min-width:130px">
+                  <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+                  <option value="3">Março</option><option value="4">Abril</option>
+                  <option value="5">Maio</option><option value="6">Junho</option>
+                  <option value="7">Julho</option><option value="8">Agosto</option>
+                  <option value="9">Setembro</option><option value="10">Outubro</option>
+                  <option value="11">Novembro</option><option value="12">Dezembro</option>
+                </select>
+              </div>
+              <!-- Trimestre -->
+              <div id="dashCtrlTrimestre" style="display:none;flex-direction:column;gap:5px">
+                <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Trimestre</label>
+                <select id="dashTrimestre"
+                  style="padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-alt);color:var(--text-primary);font-size:13px;font-family:var(--font);cursor:pointer;min-width:180px">
+                  <option value="1">1º Trimestre (Jan–Mar)</option>
+                  <option value="2">2º Trimestre (Abr–Jun)</option>
+                  <option value="3">3º Trimestre (Jul–Set)</option>
+                  <option value="4">4º Trimestre (Out–Dez)</option>
+                </select>
+              </div>
+              <!-- Ano -->
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Ano</label>
+                <select id="dashAno"
+                  style="padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-alt);color:var(--text-primary);font-size:13px;font-family:var(--font);cursor:pointer;min-width:100px">
+                </select>
+              </div>
+              <!-- Botão -->
+              <button onclick="renderDashboard()" class="btn btn-primary" style="padding:8px 20px;height:38px">
+                <i class="ti ti-chart-bar"></i>Gerar
+              </button>
             </div>
           </div>
-          <div class="home-grid">
-            <div class="card">
-              <div class="card-header"><span class="card-title">Todos os tipos</span></div>
-              <div class="chart-wrapper"><canvas id="chartDashMensal"></canvas></div>
+
+          <!-- Resultado -->
+          <div id="dashResultado" style="display:none">
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px;display:flex;align-items:center;gap:6px">
+              <i class="ti ti-calendar-stats"></i>
+              <span id="dashPeriodoLabel"></span>
             </div>
-            <div class="card">
-              <div class="card-header"><span class="card-title">Distribuição</span></div>
-              <div class="chart-wrapper"><canvas id="chartDashCategoria"></canvas></div>
+            <div id="dashKpiGrid" class="kpi-grid" style="margin-bottom:24px"></div>
+            <div class="home-grid">
+              <div class="card">
+                <div class="card-header"><span class="card-title" id="dashBarTitle">Totais por tipo</span></div>
+                <div class="chart-wrapper"><canvas id="chartDashMensal"></canvas></div>
+              </div>
+              <div class="card">
+                <div class="card-header"><span class="card-title">Distribuição</span></div>
+                <div class="chart-wrapper"><canvas id="chartDashCategoria"></canvas></div>
+              </div>
             </div>
+          </div>
+
+          <!-- Estado vazio inicial -->
+          <div id="dashVazio" style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+            <i class="ti ti-chart-bar" style="font-size:48px;display:block;margin-bottom:12px;color:var(--border)"></i>
+            <div style="font-size:15px;font-weight:500;color:var(--text-secondary);margin-bottom:6px">Selecione um período</div>
+            <div style="font-size:13px">Escolha o tipo e o período acima e clique em Gerar</div>
           </div>
         </div>
 
@@ -253,18 +293,36 @@
                 <i class="ti ti-file-text" style="font-size:22px;color:var(--accent)"></i>
               </div>
               <div class="card-title">Relatório mensal em PDF</div>
-              <p style="color:var(--text-secondary);font-size:13px;margin-bottom:20px;line-height:1.6">
-                Gera um PDF profissional com todos os lançamentos da competência selecionada.
+              <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;line-height:1.6">
+                Gera um PDF profissional com apenas os tipos que possuem movimentação no período.
               </p>
-              <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+              <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
                 <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-                  <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>Todos os lançamentos do mês
+                  <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>Apenas categorias com movimentação
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-                  <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>Totais por tipo
+                  <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>Totais por tipo + saldo
                 </div>
                 <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-                  <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>Saldo final do período
+                  <i class="ti ti-check" style="color:var(--success);font-size:15px"></i>Layout limpo e profissional
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+                <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:110px">
+                  <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Mês</label>
+                  <select id="relMes" style="padding:8px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-alt);color:var(--text-primary);font-size:13px;font-family:var(--font);cursor:pointer">
+                    <option value="1">Janeiro</option><option value="2">Fevereiro</option>
+                    <option value="3">Março</option><option value="4">Abril</option>
+                    <option value="5">Maio</option><option value="6">Junho</option>
+                    <option value="7">Julho</option><option value="8">Agosto</option>
+                    <option value="9">Setembro</option><option value="10">Outubro</option>
+                    <option value="11">Novembro</option><option value="12">Dezembro</option>
+                  </select>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:90px">
+                  <label style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Ano</label>
+                  <select id="relAno" style="padding:8px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface-alt);color:var(--text-primary);font-size:13px;font-family:var(--font);cursor:pointer">
+                  </select>
                 </div>
               </div>
               <button class="btn btn-primary" onclick="gerarRelatorio()" style="width:100%">
@@ -532,10 +590,10 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
-  <script src="services/supabase.js?v=3"></script>
-  <script src="utils/helpers.js?v=3"></script>
-  <script src="js/app.js?v=3"></script>
-  <script src="js/relatorios.js?v=3"></script>
+  <script src="services/supabase.js?v=4"></script>
+  <script src="utils/helpers.js?v=4"></script>
+  <script src="js/app.js?v=4"></script>
+  <script src="js/relatorios.js?v=4"></script>
 
   <script>
     // Responsividade configurações — aplicada por JS, sem depender de CSS cache
