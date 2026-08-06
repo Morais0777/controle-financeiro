@@ -1,0 +1,214 @@
+/* ================================================
+   RELATORIOS.CSS — FinanceIQ v6
+   Mobile-first · Card único · Sem "Em breve"
+   ================================================ */
+
+/* ── Card principal ──────────────────────────── */
+
+.rel-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  max-width: 560px;     /* desktop: limitado e elegante */
+  width: 100%;
+}
+
+/* ── Cabeçalho do card ───────────────────────── */
+
+.rel-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.rel-card-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  background: var(--accent-bg);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rel-card-icon i {
+  font-size: 24px;
+  color: var(--accent);
+}
+
+.rel-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 5px;
+  line-height: 1.3;
+}
+
+.rel-card-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Grupos de campo ─────────────────────────── */
+
+.rel-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;         /* evita overflow em flex containers */
+}
+
+.rel-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.rel-select {
+  padding: 9px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font);
+  cursor: pointer;
+  width: 100%;
+  appearance: auto;
+  transition: border-color 150ms;
+}
+
+.rel-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ── Seletor de tipo (largura total) ─────────── */
+
+.rel-field-group:first-of-type,
+#relTipoPeriodo {
+  margin-bottom: 16px;
+}
+
+.rel-field-group + .rel-field-group {
+  margin-bottom: 0;
+}
+
+/* ── Linha de controles dinâmicos ────────────── */
+
+.rel-controls-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+/* ── Checklist de recursos ───────────────────── */
+
+.rel-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 20px;
+  margin-bottom: 28px;
+  padding: 16px 20px;
+  background: var(--surface-alt);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+
+.rel-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.rel-feature-item i {
+  color: var(--success);
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+/* ── Botão de gerar PDF ──────────────────────── */
+
+.rel-btn-gerar {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* ── MOBILE (≤ 600px) ────────────────────────── */
+
+@media (max-width: 600px) {
+
+  .rel-card {
+    max-width: 100%;
+    padding: 20px 16px;
+    border-radius: var(--radius-lg);
+  }
+
+  .rel-card-header {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .rel-card-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+  }
+
+  .rel-card-icon i {
+    font-size: 20px;
+  }
+
+  .rel-card-title {
+    font-size: 14px;
+  }
+
+  .rel-card-desc {
+    font-size: 12.5px;
+  }
+
+  /* Controles em coluna no mobile */
+  .rel-controls-row {
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .rel-field-group {
+    min-width: unset;
+    width: 100%;
+  }
+
+  /* Checklist em coluna única no mobile */
+  .rel-features {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+
+  .rel-feature-item {
+    font-size: 12.5px;
+  }
+
+  .rel-btn-gerar {
+    padding: 13px 20px;
+    font-size: 14px;
+  }
+}
