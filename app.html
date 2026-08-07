@@ -388,6 +388,7 @@
             <button class="cfg-tab" onclick="showCfgTab('categorias')">Categorias</button>
             <button class="cfg-tab" onclick="showCfgTab('fixos')">Itens fixos</button>
             <button class="cfg-tab" onclick="showCfgTab('competencias')">Competências</button>
+            <button class="cfg-tab" onclick="showCfgTab('importacao')"><i class="ti ti-file-import" style="margin-right:4px"></i>Importar</button>
           </div>
 
           <!-- ABA PERFIL -->
@@ -567,6 +568,60 @@
             </div>
           </div>
 
+
+          <!-- ABA IMPORTAÇÃO XLSX -->
+          <div id="cfg-importacao" class="cfg-panel" style="display:none">
+
+            <!-- STEP 1: Selecionar arquivo -->
+            <div id="importacaoStep1">
+              <div class="card">
+                <div class="card-title" style="margin-bottom:8px">Importar planilha Excel (.xlsx)</div>
+                <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px;line-height:1.6">
+                  Selecione sua planilha no formato <strong>MM.AAAA</strong> por aba.<br>
+                  Cada aba deve conter colunas: <strong>ENTRADAS, SAÍDAS, EMPRÉSTIMOS, RENDIMENTOS, INVESTIMENTOS</strong>
+                  com subcolunas <strong>NOME</strong> e <strong>VALOR</strong>.<br>
+                  A data será definida como o <strong>dia 1 do mês</strong> de cada aba.
+                </p>
+                <div style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:32px;text-align:center;background:var(--surface-alt);cursor:pointer" onclick="document.getElementById('inputXlsx').click()">
+                  <i class="ti ti-file-spreadsheet" style="font-size:40px;color:var(--accent);display:block;margin-bottom:12px"></i>
+                  <div style="font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:4px">Clique para selecionar o arquivo</div>
+                  <div style="font-size:12.5px;color:var(--text-muted)">Formatos aceitos: .xlsx, .xls</div>
+                  <input type="file" id="inputXlsx" accept=".xlsx,.xls" style="display:none" onchange="processarArquivoXLSX(this)">
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 2: Preview -->
+            <div id="importacaoStep2" style="display:none">
+              <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                  <div class="card-title">Pré-visualização da importação</div>
+                  <button class="btn btn-ghost btn-sm" onclick="iniciarImportacao()">
+                    <i class="ti ti-arrow-left"></i> Voltar
+                  </button>
+                </div>
+                <div id="previewImportacao"></div>
+                <div style="display:flex;gap:10px;margin-top:20px">
+                  <button class="btn btn-secondary" style="flex:1" onclick="iniciarImportacao()">Cancelar</button>
+                  <button class="btn btn-primary" style="flex:2" onclick="confirmarImportacao()">
+                    <i class="ti ti-cloud-upload"></i> Confirmar importação
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 3: Resultado -->
+            <div id="importacaoStep3" style="display:none">
+              <div class="card">
+                <div id="importacaoProgresso" style="text-align:center;padding:32px 0">
+                  <i class="ti ti-loader-2" style="font-size:32px;color:var(--accent);animation:spin 1s linear infinite"></i>
+                  <div style="margin-top:12px;color:var(--text-secondary)">Importando...</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
         </div><!-- fim page-configuracoes -->
 
       </div><!-- fim page-container -->
@@ -623,6 +678,7 @@
     <span id="toastMessage" style="color:var(--text-primary)"></span>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
