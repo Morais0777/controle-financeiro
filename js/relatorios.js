@@ -110,7 +110,10 @@ function calcularTotaisPeriodo(lista) {
     }
   });
 
-  const totalSaidas = totaisMap.saida + totaisMap.cartao_credito;
+  // Tudo que sai: tipos nativos de saída + todas as categorias personalizadas
+  const totalSaidas = totaisMap.saida + totaisMap.cartao_credito
+                    + totaisMap.investimento + totaisMap.emprestimo + totaisMap.reserva
+                    + Object.values(totaisCat).reduce((a, b) => a + b, 0);
   const saldo       = totaisMap.entrada - totalSaidas;
   return { ...totaisMap, totalSaidas, saldo, totaisCat };
 }
@@ -194,17 +197,19 @@ function secaoResumoCards(doc, W, totais, yPos) {
   yPos = secaoTitulo(doc, 'Resumo do período', yPos);
   const saldo = totais.saldo;
 
-  // Cards nativos fixos
+  // Cards nativos: Entradas, Saldo + tipos nativos com movimentação + categorias
+  const saidaNativa = (totais.saida || 0) + (totais.cartao_credito || 0);
   const cards = [
-    { label:'Entradas',    valor: totais.entrada,     cor:[10,124,66],   bg:[240,253,244] },
-    { label:'Saídas',      valor: totais.totalSaidas, cor:[192,57,43],   bg:[255,241,242] },
-    { label:'Saldo',       valor: saldo,
+    { label:'Entradas', valor: totais.entrada, cor:[10,124,66],  bg:[240,253,244] },
+    { label:'Saldo',    valor: saldo,
       cor: saldo >= 0 ? [10,124,66] : [192,57,43],
       bg:  saldo >= 0 ? [240,253,244] : [255,241,242] },
-    ...(totais.cartao_credito > 0 ? [{ label:'Cartão',        valor: totais.cartao_credito, cor:[180,83,9],   bg:[255,247,237] }] : []),
-    ...(totais.investimento   > 0 ? [{ label:'Investimentos', valor: totais.investimento,   cor:[26,86,219],  bg:[239,244,255] }] : []),
-    ...(totais.emprestimo     > 0 ? [{ label:'Empréstimos',   valor: totais.emprestimo,     cor:[109,40,217], bg:[245,243,255] }] : []),
-    ...(totais.reserva        > 0 ? [{ label:'Reserva',       valor: totais.reserva,        cor:[14,116,144], bg:[236,254,255] }] : []),
+    ...(saidaNativa        > 0 ? [{ label:'Saídas',        valor: saidaNativa,           cor:[192,57,43],   bg:[255,241,242] }] : []),
+    ...(totais.cartao_credito > 0 && totais.saida > 0 ? [] :
+        totais.cartao_credito > 0 ? [{ label:'Cartão',     valor: totais.cartao_credito, cor:[180,83,9],    bg:[255,247,237] }] : []),
+    ...(totais.investimento   > 0 ? [{ label:'Investimentos', valor: totais.investimento,  cor:[26,86,219],  bg:[239,244,255] }] : []),
+    ...(totais.emprestimo     > 0 ? [{ label:'Empréstimos',   valor: totais.emprestimo,    cor:[109,40,217], bg:[245,243,255] }] : []),
+    ...(totais.reserva        > 0 ? [{ label:'Reserva',       valor: totais.reserva,       cor:[14,116,144], bg:[236,254,255] }] : []),
   ];
 
   // Categorias personalizadas — cada uma como card individual
