@@ -1143,6 +1143,105 @@ function processarArquivoCSV(input) {
   reader.readAsText(file, 'UTF-8');
 }
 
+// ── IMPORTAÇÃO XLSX ─────────────────────────────
+
+function processarArquivoXLSX(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  // Verifica se a biblioteca SheetJS está carregada
+  if (typeof XLSX === 'undefined') {
+    showToast('Biblioteca de leitura de planilhas não carregada. Recarregue a página.', 'error');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+
+      // Mapeamento de cabeçalhos de coluna para tipos do sistema
+      // Formato da planilha: pares de colunas (NOME | VALOR) para cada categoria
+      // Colunas 0-1: ENTRADAS, 2-3: SAÍDAS, 4-5: EMPRÉSTIMOS, 6-7: RENDIMENTOS, 8-9: INVESTIMENTOS
+      // Obs: RENDIMENTOS é mapeado como 'entrada' pois não existe tipo separado no sistema
+      const mapaColunas = [
+        { indices: [0, 1], tipo: 'entrada'     },
+        { indices: [2, 3], tipo: 'saida'        },
+        { indices: [4, 5], tipo: 'emprestimo'   },
+        { indices: [6, 7], tipo: 'entrada'      }, // RENDIMENTOS → entrada
+        { indices: [8, 9], tipo: 'investimento' },
+      ];
+
+      const mesesEncontrados       = new Set();
+      const lancamentosProcessados = [];
+
+      for (const nomeAba of workbook.SheetNames) {
+        // Aceita abas no formato MM.AAAA ou MM/AAAA
+        const match = nomeAba.trim().match(/^(\d{1,2})[./](\d{4})$/);
+        if (!match) continue; // ignora abas fora do padrão
+
+        const mes = parseInt(match[1], 10);
+        const ano = parseInt(match[2], 10);
+        if (mes < 1 || mes > 12) continue;
+
+        const ws   = workbook.Sheets[nomeAba];
+        // Converte em array de arrays (rows), pulando linha 1 (cabeçalhos de grupo)
+        // e linha 2 (sub-cabeçalhos NOME/VALOR) → começa a ler da linha 3 (índice 2)
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+
+        // Linha 0 = cabeçalhos de categoria (ENTRADAS, SAÍDAS…)
+        // Linha 1 = sub-cabeçalhos (NOME:, VALOR:, …)
+        // Linha 2+ = dados
+        const linhasDados = rows.slice(2);
+
+        for (const row of linhasDados) {
+          if (!row || row.every(c => c === null || c === undefined || c === '')) continue;
+
+          for (const { indices, tipo } of mapaColunas) {
+            const [iNome, iValor] = indices;
+            const nome  = row[iNome]  != null ? String(row[iNome]).trim()  : '';
+            const valor = row[iValor] != null ? row[iValor] : null;
+
+            if (!nome || valor === null || valor === undefined || valor === '') continue;
+
+            const valorNum = typeof valor === 'number'
+              ? Math.abs(valor)
+              : Math.abs(parseFloat(String(valor).replace(/[^\d,.-]/g, '').replace(',', '.')) || 0);
+
+            if (!valorNum) continue;
+
+            // Data: dia 1 do mês da aba
+            const dataISO = `${ano}-${String(mes).padStart(2, '0')}-01`;
+
+            mesesEncontrados.add(`${mes}/${ano}`);
+            lancamentosProcessados.push({
+              data:      dataISO,
+              descricao: nome || 'Sem descrição',
+              valor:     valorNum,
+              tipo,
+              mes,
+              ano,
+            });
+          }
+        }
+      }
+
+      if (lancamentosProcessados.length === 0) {
+        showToast('Nenhum lançamento encontrado. Verifique se as abas estão no formato MM.AAAA e possuem dados.', 'error');
+        return;
+      }
+
+      dadosImportacao = { lancamentosProcessados, mesesEncontrados };
+      mostrarPreviewImportacao();
+    } catch (err) {
+      console.error('Erro ao processar XLSX:', err);
+      showToast('Erro ao ler a planilha. Verifique se o arquivo é um .xlsx válido.', 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
 function mostrarPreviewImportacao() {
   if (!dadosImportacao) return;
   const { lancamentosProcessados, mesesEncontrados } = dadosImportacao;
@@ -1703,3 +1802,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // A pré-seleção dos selects de relatório é feita por initRelatorios() em relatorios.js
 });
+
+
