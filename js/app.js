@@ -170,13 +170,19 @@ async function carregarLancamentos() {
 // ── KPIs ───────────────────────────────────────
 
 function calcularTotais() {
-  const t = { entrada:0, saida:0, cartao_credito:0,
-              investimento:0, emprestimo:0, reserva:0 };
+  const t = { entrada:0, saida:0, cartao_credito:0, investimento:0, emprestimo:0 };
+  let totalCats = 0; // soma de todas as categorias personalizadas
   lancamentos.forEach(l => {
-    const tipo = l.tipo?.trim();
-    if (tipo && t[tipo] !== undefined) t[tipo] += parseFloat(l.valor) || 0;
+    const tipo  = l.tipo?.trim();
+    const catId = l.categoria_id;
+    if (catId) {
+      totalCats += parseFloat(l.valor) || 0;
+    } else if (tipo && t[tipo] !== undefined) {
+      t[tipo] += parseFloat(l.valor) || 0;
+    }
   });
-  const totalSaidas = t.saida + t.cartao_credito + t.investimento + t.emprestimo + t.reserva;
+  // totalSaidas = tudo que sai (saída + cartão + investimento + empréstimo + categorias personalizadas)
+  const totalSaidas = t.saida + t.cartao_credito + t.investimento + t.emprestimo + totalCats;
   const saldo       = t.entrada - totalSaidas;
   return { ...t, totalSaidas, saldo };
 }
@@ -189,19 +195,16 @@ function atualizarKPIs() {
     el.textContent = formatCurrency(val);
     if (color) el.style.color = color;
   };
-  setKpi('kpiSaldo',         t.saldo,       t.saldo >= 0 ? 'var(--color-entrada)' : 'var(--color-saida)');
-  setKpi('kpiEntradas',      t.entrada);
-  setKpi('kpiSaidas',        t.totalSaidas);
-  setKpi('kpiInvestimentos', t.investimento);
-  setKpi('kpiEmprestimos',   t.emprestimo);
-  setKpi('kpiReserva',       t.reserva);
+  setKpi('kpiSaldo',    t.saldo,       t.saldo >= 0 ? 'var(--color-entrada)' : 'var(--color-saida)');
+  setKpi('kpiEntradas', t.entrada);
+  setKpi('kpiSaidas',   t.totalSaidas); // total de tudo que saiu
   const trend = (id, n) => {
     const el = document.getElementById(id);
     if (el) el.textContent = n > 0 ? `${n} lançamento${n > 1 ? 's' : ''}` : '—';
   };
   trend('kpiSaldoTrend',    lancamentos.length);
   trend('kpiEntradasTrend', lancamentos.filter(l => l.tipo === 'entrada').length);
-  trend('kpiSaidasTrend',   lancamentos.filter(l => ['saida','cartao_credito'].includes(l.tipo)).length);
+  trend('kpiSaidasTrend',   lancamentos.filter(l => l.tipo !== 'entrada').length);
 }
 
 // ── ÚLTIMOS LANÇAMENTOS ────────────────────────
@@ -221,7 +224,7 @@ function renderUltimosLancamentos() {
   }
   container.innerHTML = ultimos.map(l => {
     const tipoKey   = l.tipo === 'cartao_credito' ? 'cartao' : l.tipo;
-    const corValida = ['entrada','saida','cartao','investimento','emprestimo','reserva'].includes(tipoKey);
+    const corValida = ['entrada','saida','cartao','investimento','emprestimo'].includes(tipoKey);
     const bg  = corValida ? `var(--color-${tipoKey}-bg)` : 'var(--surface-alt)';
     const cor = corValida ? `var(--color-${tipoKey})`    : 'var(--text-secondary)';
     return `
@@ -282,7 +285,7 @@ function renderTabelaLancamentos() {
         <option value="cartao_credito" ${filtroTipo==='cartao_credito'?'selected':''}>Cartão</option>
         <option value="investimento"   ${filtroTipo==='investimento'?'selected':''}>Investimentos</option>
         <option value="emprestimo"     ${filtroTipo==='emprestimo'?'selected':''}>Empréstimos</option>
-        <option value="reserva"        ${filtroTipo==='reserva'?'selected':''}>Reserva</option>
+
         ${categorias.length > 0 ? '<optgroup label="Categorias">' +
           categorias.map(c => `<option value="cat_${c.id}" ${filtroTipo==='cat_'+c.id?'selected':''}>${escapeHtml(c.nome)}</option>`).join('') +
           '</optgroup>' : ''}
@@ -474,7 +477,6 @@ function renderTiposNoModal(tipoSelecionado) {
     { value:'cartao_credito', label:'Cartão de crédito' },
     { value:'investimento',   label:'Investimento' },
     { value:'emprestimo',     label:'Empréstimo' },
-    { value:'reserva',        label:'Reserva financeira' },
   ];
   select.innerHTML = tiposFixos.map(t =>
     `<option value="${t.value}" ${tipoSelecionado===t.value?'selected':''}>${t.label}</option>`
@@ -1402,7 +1404,7 @@ async function renderDashboard() {
   // Calcular totais — tipos nativos + categorias personalizadas separadas
   const totaisMap = {
     entrada:0, saida:0, cartao_credito:0,
-    investimento:0, emprestimo:0, reserva:0
+    investimento:0, emprestimo:0
   };
   const totaisCatDash = {}; // { [categoria_id]: valor }
 
@@ -1417,7 +1419,7 @@ async function renderDashboard() {
   });
   // Tudo que sai: tipos nativos de saída + todas as categorias personalizadas
   const totalSaidas = totaisMap.saida + totaisMap.cartao_credito
-                    + totaisMap.investimento + totaisMap.emprestimo + totaisMap.reserva
+                    + totaisMap.investimento + totaisMap.emprestimo
                     + Object.values(totaisCatDash).reduce((a, b) => a + b, 0);
   const saldo       = totaisMap.entrada - totalSaidas;
 
@@ -1428,7 +1430,7 @@ async function renderDashboard() {
     { key:'cartao_credito',label:'Cartão',          icon:'ti-credit-card',    cor:'var(--color-cartao)',       corHex:'#b45309' },
     { key:'investimento',  label:'Investimentos',  icon:'ti-building-bank',  cor:'var(--color-investimento)', corHex:'#1a56db' },
     { key:'emprestimo',    label:'Empréstimos',    icon:'ti-handshake',      cor:'var(--color-emprestimo)',   corHex:'#6d28d9' },
-    { key:'reserva',       label:'Reserva',        icon:'ti-shield-check',   cor:'var(--color-reserva)',      corHex:'#0e7490' },
+
   ];
   const tiposAtivos = tiposConfig.filter(t => totaisMap[t.key] > 0);
 
@@ -1635,7 +1637,7 @@ function getTipoIcon(tipo) {
   const icons = {
     entrada:'ti-trending-up', saida:'ti-trending-down',
     cartao_credito:'ti-credit-card', investimento:'ti-building-bank',
-    emprestimo:'ti-handshake', reserva:'ti-shield-check'
+    emprestimo:'ti-handshake'
   };
   return icons[tipo] || 'ti-tag';
 }
@@ -1675,7 +1677,7 @@ function getTipoLabel(tipo) {
   }
   const labels = {
     entrada:'Entrada', saida:'Saída', cartao_credito:'Cartão',
-    investimento:'Investimento', emprestimo:'Empréstimo', reserva:'Reserva'
+    investimento:'Investimento', emprestimo:'Empréstimo'
   };
   return labels[tipo] || tipo;
 }
