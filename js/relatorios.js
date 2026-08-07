@@ -113,132 +113,6 @@ function formatCurrencyPDF(value) {
   return new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' }).format(num);
 }
 
-// ── GRÁFICOS OFFSCREEN (escala 2× para nitidez) ─
-
-function gerarGraficoOffscreen(tipo, dados, opcoes = {}) {
-  return new Promise(resolve => {
-    const escala  = 2;
-    const canvas  = document.createElement('canvas');
-    canvas.width  = (opcoes.width  || 700) * escala;
-    canvas.height = (opcoes.height || 300) * escala;
-    canvas.style.cssText = 'position:absolute;left:-9999px;top:-9999px;visibility:hidden';
-    document.body.appendChild(canvas);
-
-    const ctx = canvas.getContext('2d');
-    ctx.scale(escala, escala);
-
-    const chart = new Chart(ctx, {
-      type: tipo,
-      data: dados,
-      options: {
-        responsive: false,
-        devicePixelRatio: escala,
-        animation: { duration: 0 },
-        plugins: { legend: opcoes.legend || { display: false } },
-        ...opcoes.chartOptions,
-      }
-    });
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const imgData = canvas.toDataURL('image/png', 1.0);
-        chart.destroy();
-        document.body.removeChild(canvas);
-        resolve(imgData);
-      });
-    });
-  });
-}
-
-// ── GRÁFICO DE BARRAS ──────────────────────────
-
-async function gerarGraficoBarras(tiposAtivos, totaisMap) {
-  const maxVal = Math.max(...tiposAtivos.map(t => totaisMap[t.key]), 0);
-  const dados = {
-    labels: tiposAtivos.map(t => t.label),
-    datasets: [{
-      data: tiposAtivos.map(t => totaisMap[t.key]),
-      backgroundColor: tiposAtivos.map(t => t.corHex + 'dd'),
-      borderColor:     tiposAtivos.map(t => t.corHex),
-      borderWidth: 1.5,
-      borderRadius: 8,
-      borderSkipped: false,
-      barPercentage: 0.6,
-      categoryPercentage: 0.7,
-    }]
-  };
-  return gerarGraficoOffscreen('bar', dados, {
-    width: 1000, height: 400,
-    chartOptions: {
-      layout: { padding: { top: 40, right: 30, bottom: 10, left: 10 } },
-      scales: {
-        y: {
-          beginAtZero: true,
-          suggestedMax: maxVal * 1.2,
-          ticks: {
-            color: '#64748b',
-            font: { size: 13 },
-            maxTicksLimit: 6,
-            callback: v => v >= 1000 ? 'R$' + (v/1000).toFixed(0) + 'k' : 'R$' + v.toFixed(0)
-          },
-          grid: { color: '#e2e8f0' },
-          border: { dash: [4,4], color: 'transparent' }
-        },
-        x: {
-          ticks: { color: '#475569', font: { size: 13, weight: 'bold' }, maxRotation: 0 },
-          grid: { display: false },
-          border: { color: '#e2e8f0' }
-        }
-      }
-    }
-  });
-}
-
-// ── GRÁFICO DE ROSCA ───────────────────────────
-
-async function gerarGraficoDoughnut(tiposAtivos, totaisMap) {
-  const dados = {
-    labels: tiposAtivos.map(t => t.label),
-    datasets: [{
-      data: tiposAtivos.map(t => totaisMap[t.key]),
-      backgroundColor: tiposAtivos.map(t => t.corHex),
-      borderColor: '#ffffff',
-      borderWidth: 3,
-    }]
-  };
-  return gerarGraficoOffscreen('doughnut', dados, {
-    width: 700, height: 440,
-    legend: {
-      display: true,
-      position: 'bottom',
-      labels: {
-        color: '#475569',
-        font: { size: 14 },
-        padding: 20,
-        usePointStyle: true,
-        pointStyleWidth: 12,
-        generateLabels: (chart) => {
-          const ds    = chart.data.datasets[0];
-          const total = ds.data.reduce((a,b) => a+b, 0);
-          return chart.data.labels.map((label, i) => ({
-            text: `${label}  ${total > 0 ? ((ds.data[i]/total)*100).toFixed(1) : '0.0'}%`,
-            fillStyle: ds.backgroundColor[i],
-            strokeStyle: '#fff',
-            lineWidth: 0,
-            pointStyle: 'circle',
-            index: i,
-            hidden: false,
-          }));
-        }
-      }
-    },
-    chartOptions: {
-      cutout: '55%',
-      layout: { padding: { top: 20, right: 20, bottom: 10, left: 20 } },
-    }
-  });
-}
-
 // ── SEÇÃO: CABEÇALHO ──────────────────────────
 
 function secaoCabecalho(doc, W, username, periodoLabel) {
@@ -312,7 +186,7 @@ function secaoResumoCards(doc, W, totais, yPos) {
 
   const cols   = 3;
   const gapCol = 7;
-  const cardW  = (PDF_CONTENT - (cols - 1) * gapCol) / cols; // ~56mm cada
+  const cardW  = (PDF_CONTENT - (cols - 1) * gapCol) / cols;
   const cardH  = 24;
   const gapRow = 6;
 
@@ -341,40 +215,8 @@ function secaoResumoCards(doc, W, totais, yPos) {
   return yPos + linhas * (cardH + gapRow) + 8;
 }
 
-// ── SEÇÃO: GRÁFICOS ───────────────────────────
-
-async function secaoGraficos(doc, W, tiposAtivos, totaisMap, yPos) {
-  if (tiposAtivos.length === 0) return yPos;
-
-  // Gráfico de barras
-  if (yPos + 90 > PDF_FOOTER_Y) { doc.addPage(); yPos = 20; }
-  yPos = secaoTitulo(doc, 'Distribuição financeira', yPos);
-
-  const imgBarras = await gerarGraficoBarras(tiposAtivos, totaisMap);
-  const barW = PDF_CONTENT;
-  const barH = Math.round(barW * 0.40); // ~73mm
-  doc.addImage(imgBarras, 'PNG', PDF_MARGIN, yPos, barW, barH);
-  yPos += barH + 14;
-
-  // Gráfico de rosca
-  if (yPos + 90 > PDF_FOOTER_Y) { doc.addPage(); yPos = 20; }
-
-  doc.setTextColor(100, 116, 139);
-  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-  doc.text('Distribuição por tipo', W / 2, yPos - 2, { align: 'center' });
-
-  const imgRosca = await gerarGraficoDoughnut(tiposAtivos, totaisMap);
-  const roscaW   = 128;
-  const roscaH   = Math.round(roscaW * (440 / 700)); // ~80mm
-  const roscaX   = (W - roscaW) / 2;
-  doc.addImage(imgRosca, 'PNG', roscaX, yPos, roscaW, roscaH);
-  yPos += roscaH + 12;
-
-  return yPos;
-}
-
 // ── SEÇÃO: TABELA ─────────────────────────────
-// Larguras: 22 + 68 + 26 + 38 + 28 = 182mm (= PDF_CONTENT exato)
+// Larguras: 22 + 68 + 26 + 38 + 28 = 182mm (PDF_CONTENT exato)
 
 function secaoTabela(doc, W, lista, yPos) {
   if (yPos + 55 > PDF_FOOTER_Y) { doc.addPage(); yPos = 20; }
@@ -415,7 +257,6 @@ function secaoTabela(doc, W, lista, yPos) {
     head: [['Data', 'Descrição', 'Tipo', 'Valor', 'Observação']],
     body: rows,
     theme: 'plain',
-    // Largura total exata: 22+68+26+38+28 = 182 = PDF_CONTENT
     tableWidth: PDF_CONTENT,
     margin: { left: PDF_MARGIN, right: PDF_MARGIN, top: 20, bottom: 20 },
     styles: {
@@ -563,9 +404,8 @@ async function gerarRelatorio() {
     const username = profile?.username || currentUser.email.split('@')[0];
 
     const { inicio, fim, label: periodoLabel, nomeArquivo } = calcularRangePeriodo(tipo, mes, trim, ano);
-    const lista       = await buscarDadosPeriodo(inicio, fim);
-    const totais      = calcularTotaisPeriodo(lista);
-    const tiposAtivos = REL_TIPOS_CONFIG.filter(t => totais[t.key] > 0);
+    const lista  = await buscarDadosPeriodo(inicio, fim);
+    const totais = calcularTotaisPeriodo(lista);
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -573,7 +413,6 @@ async function gerarRelatorio() {
 
     let yPos = secaoCabecalho(doc, W, username, periodoLabel);
     yPos     = secaoResumoCards(doc, W, totais, yPos);
-    yPos     = await secaoGraficos(doc, W, tiposAtivos, totais, yPos);
     yPos     = secaoTabela(doc, W, lista, yPos);
     yPos     = secaoTotaisFinais(doc, W, lista, totais, yPos);
     secaoRodapePaginas(doc, W);
