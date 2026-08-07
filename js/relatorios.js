@@ -244,13 +244,22 @@ function secaoTabela(doc, W, lista, yPos) {
     investimento:'−', emprestimo:'−', reserva:'−',
   };
 
-  const rows = lista.map(l => [
-    new Date(l.data + 'T12:00:00').toLocaleDateString('pt-BR'),
-    l.descricao || '—',
-    tipoLabels[l.tipo] || l.tipo,
-    (sinais[l.tipo] || '−') + ' ' + formatCurrencyPDF(parseFloat(l.valor) || 0),
-    l.observacao || '—'
-  ]);
+  const rows = lista.map(l => {
+    // Força interpretação como data LOCAL (sem fuso) para evitar dia -1
+    const partes = String(l.data).split('-');
+    const dataLocal = partes.length === 3
+      ? new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]))
+      : new Date(l.data + 'T12:00:00');
+    const dataFormatada = dataLocal.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric' });
+
+    return [
+      dataFormatada,
+      l.descricao || '—',
+      tipoLabels[l.tipo] || l.tipo,
+      (sinais[l.tipo] || '−') + ' ' + formatCurrencyPDF(parseFloat(l.valor) || 0),
+      l.observacao || '—'
+    ];
+  });
 
   doc.autoTable({
     startY: yPos,
@@ -278,12 +287,13 @@ function secaoTabela(doc, W, lista, yPos) {
     },
     alternateRowStyles: { fillColor: [249, 250, 253] },
     columnStyles: {
-      0: { cellWidth: 22, halign: 'left'  },  // Data
-      1: { cellWidth: 68, halign: 'left'  },  // Descrição
-      2: { cellWidth: 26, halign: 'left'  },  // Tipo
-      3: { cellWidth: 38, halign: 'right' },  // Valor
-      4: { cellWidth: 28, halign: 'left',
-           textColor: [140, 150, 165]      },  // Observação
+      0: { cellWidth: 24, halign: 'left'   },  // Data (era 22, aumentado para caber dd/mm/aaaa)
+      1: { cellWidth: 62, halign: 'left'   },  // Descrição (ajustado para manter soma = 182)
+      2: { cellWidth: 28, halign: 'left'   },  // Tipo (era 26, pequena folga)
+      3: { cellWidth: 42, halign: 'right',
+           overflow: 'hidden'              },  // Valor (era 38, aumentado para caber sinal + moeda)
+      4: { cellWidth: 26, halign: 'left',
+           textColor: [140, 150, 165]      },  // Observação (ajustado; 24+62+28+42+26 = 182)
     },
     didParseCell: (data) => {
       if (data.section !== 'body') return;
