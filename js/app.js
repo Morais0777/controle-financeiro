@@ -762,7 +762,7 @@ async function deletarFixo(id) {
     'Excluir item fixo',
     `Tem certeza que deseja excluir "<strong>${escapeHtml(f.nome)}</strong>"?<br>Essa ação não poderá ser desfeita.`,
     async () => {
-      const { error } = await window.supabase.from('itens_fixos').update({ ativo: false }).eq('id', id);
+      const { error } = await window.supabase.from('itens_fixos').delete().eq('id', id);
       if (error) { showToast('Erro ao excluir', 'error'); console.error(error); return; }
       if (editingFixoId === id) cancelarEdicaoFixo();
       await carregarItensFixos();
@@ -798,8 +798,8 @@ async function salvarCategoria() {
   }
 
   if (error) {
-    if (error.code === '23505') { showToast('Já existe uma categoria com este nome', 'warning'); return; }
-    showToast('Erro ao salvar categoria', 'error'); console.error(error); return;
+    if (error.code === '23505') { showToast('Já existe uma categoria com este nome. Se você a apagou recentemente, aguarde alguns segundos e tente novamente.', 'warning'); return; }
+    showToast('Erro ao salvar categoria: ' + (error.message || ''), 'error'); console.error(error); return;
   }
   showToast(editingCatId ? 'Categoria atualizada!' : 'Categoria criada!', 'success');
   cancelarEdicaoCategoria();
@@ -887,7 +887,12 @@ async function deletarCategoria(id) {
     'Excluir categoria',
     `Tem certeza que deseja excluir "<strong>${escapeHtml(c.nome)}</strong>"?<br>Essa ação não poderá ser desfeita.`,
     async () => {
-      const { error } = await window.supabase.from('categorias').update({ ativa: false }).eq('id', id);
+      // Remove categoria_id dos lançamentos e itens fixos vinculados antes de deletar
+      await window.supabase.from('lancamentos')
+        .update({ categoria_id: null }).eq('categoria_id', id);
+      await window.supabase.from('itens_fixos')
+        .update({ categoria_id: null }).eq('categoria_id', id);
+      const { error } = await window.supabase.from('categorias').delete().eq('id', id);
       if (error) { showToast('Erro ao excluir', 'error'); console.error(error); return; }
       if (editingCatId === id) cancelarEdicaoCategoria();
       await carregarCategoriasList();
