@@ -101,21 +101,39 @@ async function mudarCompetencia(id) {
 // ── COMPETÊNCIAS CRUD ──────────────────────────
 
 async function garantirCompetencia(mes, ano) {
+  // Garante que mes e ano são sempre números inteiros (Supabase pode retornar strings)
+  mes = parseInt(mes, 10);
+  ano = parseInt(ano, 10);
+
+  // 1. Checa o array em memória primeiro
+  const emMemoria = competencias.find(c => parseInt(c.mes,10) === mes && parseInt(c.ano,10) === ano);
+  if (emMemoria) return;
+
+  // 2. Confirma no banco antes de inserir
   const { data } = await window.supabase
-    .from('competencias').select('id')
-    .eq('user_id', currentUser.id).eq('mes', mes).eq('ano', ano).single();
-  if (!data) {
-    await window.supabase.from('competencias')
-      .insert({ user_id: currentUser.id, mes, ano, ativa: false });
+    .from('competencias').select('id,mes,ano,ativa')
+    .eq('user_id', currentUser.id).eq('mes', mes).eq('ano', ano).maybeSingle();
+  if (data) {
+    if (!competencias.find(c => c.id === data.id)) {
+      competencias.push({ ...data, mes: parseInt(data.mes,10), ano: parseInt(data.ano,10) });
+    }
+    return;
   }
+
+  // 3. Não existe — cria
+  const { data: nova } = await window.supabase
+    .from('competencias')
+    .insert({ user_id: currentUser.id, mes, ano, ativa: false })
+    .select().single();
+  if (nova) competencias.push({ ...nova, mes: parseInt(nova.mes,10), ano: parseInt(nova.ano,10) });
 }
 
 async function getCompetenciaId(mes, ano) {
+  mes = parseInt(mes, 10);
+  ano = parseInt(ano, 10);
   await garantirCompetencia(mes, ano);
-  const { data } = await window.supabase
-    .from('competencias').select('id')
-    .eq('user_id', currentUser.id).eq('mes', mes).eq('ano', ano).single();
-  return data?.id;
+  const comp = competencias.find(c => parseInt(c.mes,10) === mes && parseInt(c.ano,10) === ano);
+  return comp?.id;
 }
 
 async function carregarCompetencias() {
@@ -1804,5 +1822,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // A pré-seleção dos selects de relatório é feita por initRelatorios() em relatorios.js
 });
-
-
