@@ -1848,5 +1848,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // A pré-seleção dos selects de relatório é feita por initRelatorios() em relatorios.js
 });
-
-
