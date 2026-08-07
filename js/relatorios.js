@@ -240,8 +240,8 @@ function secaoTabela(doc, W, lista, yPos) {
     investimento:[26,86,219], emprestimo:[109,40,217], reserva:[14,116,144],
   };
   const sinais = {
-    entrada:'+', saida:'−', cartao_credito:'−',
-    investimento:'−', emprestimo:'−', reserva:'−',
+    entrada:'+', saida:'-', cartao_credito:'-',
+    investimento:'-', emprestimo:'-', reserva:'-',
   };
 
   const rows = lista.map(l => {
@@ -254,10 +254,10 @@ function secaoTabela(doc, W, lista, yPos) {
 
     return [
       dataFormatada,
-      l.descricao || '—',
+      l.descricao || '-',
       tipoLabels[l.tipo] || l.tipo,
-      (sinais[l.tipo] || '−') + ' ' + formatCurrencyPDF(parseFloat(l.valor) || 0),
-      l.observacao || '—'
+      (sinais[l.tipo] || '-') + ' ' + formatCurrencyPDF(parseFloat(l.valor) || 0),
+      l.observacao || '-'
     ];
   });
 
@@ -435,3 +435,4 @@ async function gerarRelatorio() {
     showToast('Erro ao gerar o PDF. Tente novamente.', 'error');
   }
 }
+
