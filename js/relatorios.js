@@ -96,14 +96,23 @@ async function buscarDadosPeriodo(inicio, fim) {
 
 function calcularTotaisPeriodo(lista) {
   const totaisMap = { entrada:0, saida:0, cartao_credito:0, investimento:0, emprestimo:0, reserva:0 };
+  const totaisCat = {}; // { [categoria_id]: valor }
+
   lista.forEach(l => {
-    const tipo = l.tipo?.trim();
-    if (tipo && totaisMap[tipo] !== undefined)
+    const tipo  = l.tipo?.trim();
+    const catId = l.categoria_id;
+
+    if (catId) {
+      // Categoria personalizada: acumula separado
+      totaisCat[catId] = (totaisCat[catId] || 0) + (parseFloat(l.valor) || 0);
+    } else if (tipo && totaisMap[tipo] !== undefined) {
       totaisMap[tipo] += parseFloat(l.valor) || 0;
+    }
   });
+
   const totalSaidas = totaisMap.saida + totaisMap.cartao_credito;
   const saldo       = totaisMap.entrada - totalSaidas;
-  return { ...totaisMap, totalSaidas, saldo };
+  return { ...totaisMap, totalSaidas, saldo, totaisCat };
 }
 
 // ── FORMATAÇÃO DE MOEDA ────────────────────────
@@ -168,10 +177,24 @@ function secaoTitulo(doc, texto, yPos) {
 
 // ── SEÇÃO: CARDS DE RESUMO ────────────────────
 
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return [r, g, b];
+}
+
+function hexToBg(hex) {
+  const [r,g,b] = hexToRgb(hex);
+  // versão clara do tom para background
+  return [Math.round(r*0.15+240), Math.round(g*0.15+240), Math.round(b*0.15+240)];
+}
+
 function secaoResumoCards(doc, W, totais, yPos) {
   yPos = secaoTitulo(doc, 'Resumo do período', yPos);
   const saldo = totais.saldo;
 
+  // Cards nativos fixos
   const cards = [
     { label:'Entradas',    valor: totais.entrada,     cor:[10,124,66],   bg:[240,253,244] },
     { label:'Saídas',      valor: totais.totalSaidas, cor:[192,57,43],   bg:[255,241,242] },
@@ -183,6 +206,18 @@ function secaoResumoCards(doc, W, totais, yPos) {
     ...(totais.emprestimo     > 0 ? [{ label:'Empréstimos',   valor: totais.emprestimo,     cor:[109,40,217], bg:[245,243,255] }] : []),
     ...(totais.reserva        > 0 ? [{ label:'Reserva',       valor: totais.reserva,        cor:[14,116,144], bg:[236,254,255] }] : []),
   ];
+
+  // Categorias personalizadas — cada uma como card individual
+  const totaisCat = totais.totaisCat || {};
+  Object.entries(totaisCat).forEach(([catId, valor]) => {
+    if (valor <= 0) return;
+    const cat = (typeof categorias !== 'undefined' ? categorias : []).find(c => c.id === catId);
+    const nome = cat ? cat.nome : catId;
+    const hex  = cat?.cor || '#374060';
+    const cor  = hexToRgb(hex);
+    const bg   = hexToBg(hex);
+    cards.push({ label: nome, valor, cor, bg });
+  });
 
   const cols   = 3;
   const gapCol = 7;
@@ -239,6 +274,21 @@ function secaoTabela(doc, W, lista, yPos) {
     entrada:[10,124,66], saida:[192,57,43], cartao_credito:[180,83,9],
     investimento:[26,86,219], emprestimo:[109,40,217], reserva:[14,116,144],
   };
+  // Função para pegar label e cor respeitando categoria personalizada
+  const getLabelParaLanc = (l) => {
+    if (l.categoria_id) {
+      const cat = (typeof categorias !== 'undefined' ? categorias : []).find(c => c.id === l.categoria_id);
+      return cat ? cat.nome : (tipoLabels[l.tipo] || l.tipo);
+    }
+    return tipoLabels[l.tipo] || l.tipo;
+  };
+  const getCorParaLanc = (l) => {
+    if (l.categoria_id) {
+      const cat = (typeof categorias !== 'undefined' ? categorias : []).find(c => c.id === l.categoria_id);
+      if (cat?.cor) return hexToRgb(cat.cor);
+    }
+    return tipoColors[l.tipo] || [30,37,65];
+  };
   const sinais = {
     entrada:'+', saida:'-', cartao_credito:'-',
     investimento:'-', emprestimo:'-', reserva:'-',
@@ -255,7 +305,7 @@ function secaoTabela(doc, W, lista, yPos) {
     return [
       dataFormatada,
       l.descricao || '-',
-      tipoLabels[l.tipo] || l.tipo,
+      getLabelParaLanc(l),
       (sinais[l.tipo] || '-') + ' ' + formatCurrencyPDF(parseFloat(l.valor) || 0),
       l.observacao || '-'
     ];
@@ -299,7 +349,7 @@ function secaoTabela(doc, W, lista, yPos) {
       if (data.section !== 'body') return;
       const l   = lista[data.row.index];
       if (!l) return;
-      const cor = tipoColors[l.tipo] || [30, 37, 65];
+      const cor = getCorParaLanc(l);
       if (data.column.index === 3) {
         data.cell.styles.textColor = cor;
         data.cell.styles.fontStyle = 'bold';
@@ -341,9 +391,23 @@ function secaoTotaisFinais(doc, W, lista, totais, yPos) {
 
   yPos += 24;
 
-  // Total por tipo
-  const tiposComMovimento = REL_TIPOS_CONFIG.filter(t => totais[t.key] > 0);
-  const alturaResumo = 14 + Math.ceil(tiposComMovimento.length / 3) * 26;
+  // Total por tipo — nativos + categorias personalizadas
+  const tiposNativos = REL_TIPOS_CONFIG.filter(t => totais[t.key] > 0).map(t => ({
+    label: t.label, valor: totais[t.key], cor: t.cor, bg: t.bg
+  }));
+
+  const totaisCatFin = totais.totaisCat || {};
+  const tiposCat = Object.entries(totaisCatFin)
+    .filter(([,v]) => v > 0)
+    .map(([catId, valor]) => {
+      const cat  = (typeof categorias !== 'undefined' ? categorias : []).find(c => c.id === catId);
+      const nome = cat ? cat.nome : catId;
+      const hex  = cat?.cor || '#374060';
+      return { label: nome, valor, cor: hexToRgb(hex), bg: hexToBg(hex) };
+    });
+
+  const todosItens = [...tiposNativos, ...tiposCat];
+  const alturaResumo = 14 + Math.ceil(todosItens.length / 3) * 26;
   if (yPos + alturaResumo > PDF_FOOTER_Y) { doc.addPage(); yPos = 20; }
 
   doc.setTextColor(30, 37, 65);
@@ -351,12 +415,12 @@ function secaoTotaisFinais(doc, W, lista, totais, yPos) {
   doc.text('Total por tipo de lançamento', PDF_MARGIN, yPos + 8);
   yPos += 14;
 
-  if (tiposComMovimento.length > 0) {
-    const cols  = Math.min(tiposComMovimento.length, 3);
+  if (todosItens.length > 0) {
+    const cols  = Math.min(todosItens.length, 3);
     const itemW = (PDF_CONTENT - (cols - 1) * 6) / cols;
     const itemH = 20;
 
-    tiposComMovimento.forEach((t, i) => {
+    todosItens.forEach((t, i) => {
       const col = i % cols;
       const row = Math.floor(i / cols);
       const x   = PDF_MARGIN + col * (itemW + 6);
@@ -373,10 +437,10 @@ function secaoTotaisFinais(doc, W, lista, totais, yPos) {
 
       doc.setTextColor(...t.cor);
       doc.setFontSize(10); doc.setFont('helvetica', 'bold');
-      doc.text(formatCurrencyPDF(totais[t.key]), x + 7, y + 16);
+      doc.text(formatCurrencyPDF(t.valor), x + 7, y + 16);
     });
 
-    yPos += Math.ceil(tiposComMovimento.length / cols) * (itemH + 5) + 4;
+    yPos += Math.ceil(todosItens.length / cols) * (itemH + 5) + 4;
   }
 
   return yPos;
@@ -435,4 +499,3 @@ async function gerarRelatorio() {
     showToast('Erro ao gerar o PDF. Tente novamente.', 'error');
   }
 }
-

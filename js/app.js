@@ -1399,38 +1399,55 @@ async function renderDashboard() {
 
   const lista = lancData || [];
 
-  // Calcular totais — apenas tipos com movimentação
+  // Calcular totais — tipos nativos + categorias personalizadas separadas
   const totaisMap = {
     entrada:0, saida:0, cartao_credito:0,
     investimento:0, emprestimo:0, reserva:0
   };
+  const totaisCatDash = {}; // { [categoria_id]: valor }
+
   lista.forEach(l => {
-    const tipo = l.tipo?.trim();
-    if (tipo && totaisMap[tipo] !== undefined)
+    const tipo  = l.tipo?.trim();
+    const catId = l.categoria_id;
+    if (catId) {
+      totaisCatDash[catId] = (totaisCatDash[catId] || 0) + (parseFloat(l.valor) || 0);
+    } else if (tipo && totaisMap[tipo] !== undefined) {
       totaisMap[tipo] += parseFloat(l.valor) || 0;
+    }
   });
   const totalSaidas = totaisMap.saida + totaisMap.cartao_credito;
   const saldo       = totaisMap.entrada - totalSaidas;
 
-  // Definição de todos os tipos possíveis
+  // Tipos nativos com movimentação
   const tiposConfig = [
-    { key:'entrada',       label:'Entradas',      icon:'ti-trending-up',    cor:'var(--color-entrada)',      bg:'var(--color-entrada-bg)',      corHex:'#0a7c42' },
-    { key:'saida',         label:'Saídas',         icon:'ti-trending-down',  cor:'var(--color-saida)',        bg:'var(--color-saida-bg)',        corHex:'#c0392b' },
-    { key:'cartao_credito',label:'Cartão',          icon:'ti-credit-card',    cor:'var(--color-cartao)',       bg:'var(--color-cartao-bg)',       corHex:'#b45309' },
-    { key:'investimento',  label:'Investimentos',  icon:'ti-building-bank',  cor:'var(--color-investimento)', bg:'var(--color-investimento-bg)', corHex:'#1a56db' },
-    { key:'emprestimo',    label:'Empréstimos',    icon:'ti-handshake',      cor:'var(--color-emprestimo)',   bg:'var(--color-emprestimo-bg)',   corHex:'#6d28d9' },
-    { key:'reserva',       label:'Reserva',        icon:'ti-shield-check',   cor:'var(--color-reserva)',      bg:'var(--color-reserva-bg)',      corHex:'#0e7490' },
+    { key:'entrada',       label:'Entradas',      icon:'ti-trending-up',    cor:'var(--color-entrada)',      corHex:'#0a7c42' },
+    { key:'saida',         label:'Saídas',         icon:'ti-trending-down',  cor:'var(--color-saida)',        corHex:'#c0392b' },
+    { key:'cartao_credito',label:'Cartão',          icon:'ti-credit-card',    cor:'var(--color-cartao)',       corHex:'#b45309' },
+    { key:'investimento',  label:'Investimentos',  icon:'ti-building-bank',  cor:'var(--color-investimento)', corHex:'#1a56db' },
+    { key:'emprestimo',    label:'Empréstimos',    icon:'ti-handshake',      cor:'var(--color-emprestimo)',   corHex:'#6d28d9' },
+    { key:'reserva',       label:'Reserva',        icon:'ti-shield-check',   cor:'var(--color-reserva)',      corHex:'#0e7490' },
   ];
-
-  // Filtrar apenas tipos com valor > 0
   const tiposAtivos = tiposConfig.filter(t => totaisMap[t.key] > 0);
 
-  // KPIs — só exibe tipos com movimentação + saldo sempre
+  // Categorias personalizadas com movimentação
+  const catAtivas = Object.entries(totaisCatDash)
+    .filter(([,v]) => v > 0)
+    .map(([catId, valor]) => {
+      const cat = categorias.find(c => c.id === catId);
+      return {
+        key: 'cat_' + catId,
+        label: cat ? cat.nome : catId,
+        icon: 'ti-tag',
+        cor: cat?.cor || '#374060',
+        corHex: cat?.cor || '#374060',
+        valor
+      };
+    });
+
+  // KPIs — saldo fixo + nativos ativos + categorias ativas
   const kpiGrid = document.getElementById('dashKpiGrid');
   if (kpiGrid) {
-    // Saldo sempre aparece
     const saldoCor = saldo >= 0 ? 'var(--color-entrada)' : 'var(--color-saida)';
-    const saldoBg  = saldo >= 0 ? 'var(--color-entrada-bg)' : 'var(--color-saida-bg)';
     let kpiHtml = `
       <div class="kpi-card" style="border-left:3px solid ${saldoCor}">
         <div class="kpi-label"><i class="ti ti-wallet"></i>Saldo</div>
@@ -1441,6 +1458,13 @@ async function renderDashboard() {
         <div class="kpi-card" style="border-left:3px solid ${t.cor}">
           <div class="kpi-label"><i class="ti ${t.icon}"></i>${t.label}</div>
           <div class="kpi-value" style="color:${t.cor}">${formatCurrency(totaisMap[t.key])}</div>
+        </div>`;
+    });
+    catAtivas.forEach(c => {
+      kpiHtml += `
+        <div class="kpi-card" style="border-left:3px solid ${c.corHex}">
+          <div class="kpi-label"><i class="ti ${c.icon}"></i>${c.label}</div>
+          <div class="kpi-value" style="color:${c.corHex}">${formatCurrency(c.valor)}</div>
         </div>`;
     });
     kpiGrid.innerHTML = kpiHtml;
@@ -1459,17 +1483,23 @@ async function renderDashboard() {
   const gridColor  = isDark ? '#2e3348' : '#e4e7ee';
   const labelColor = isDark ? '#8b92b3' : '#6b7590';
 
-  // Gráfico de barras — apenas tipos ativos
+  // Todos os itens para os gráficos: nativos + categorias personalizadas
+  const todosGraf = [
+    ...tiposAtivos.map(t => ({ label: t.label, valor: totaisMap[t.key], cor: t.corHex })),
+    ...catAtivas.map(c => ({ label: c.label, valor: c.valor, cor: c.corHex }))
+  ];
+
+  // Gráfico de barras — tipos nativos + categorias personalizadas
   const ctxM = document.getElementById('chartDashMensal');
   if (ctxM) {
     if (charts.dashMensal) charts.dashMensal.destroy();
-    if (tiposAtivos.length > 0) {
+    if (todosGraf.length > 0) {
       charts.dashMensal = new Chart(ctxM, {
         type: 'bar',
         data: {
-          labels: tiposAtivos.map(t => t.label),
-          datasets: [{ data: tiposAtivos.map(t => totaisMap[t.key]),
-            backgroundColor: tiposAtivos.map(t => t.corHex),
+          labels: todosGraf.map(t => t.label),
+          datasets: [{ data: todosGraf.map(t => t.valor),
+            backgroundColor: todosGraf.map(t => t.cor),
             borderRadius: 6, borderSkipped: false }]
         },
         options: {
@@ -1484,17 +1514,17 @@ async function renderDashboard() {
     }
   }
 
-  // Gráfico de pizza — apenas tipos ativos
+  // Gráfico de pizza — tipos nativos + categorias personalizadas
   const ctxD = document.getElementById('chartDashCategoria');
   if (ctxD) {
     if (charts.dashCat) charts.dashCat.destroy();
-    if (tiposAtivos.length > 0) {
+    if (todosGraf.length > 0) {
       charts.dashCat = new Chart(ctxD, {
         type: 'doughnut',
         data: {
-          labels: tiposAtivos.map(t => t.label),
-          datasets: [{ data: tiposAtivos.map(t => totaisMap[t.key]),
-            backgroundColor: tiposAtivos.map(t => t.corHex), borderWidth: 0 }]
+          labels: todosGraf.map(t => t.label),
+          datasets: [{ data: todosGraf.map(t => t.valor),
+            backgroundColor: todosGraf.map(t => t.cor), borderWidth: 0 }]
         },
         options: {
           responsive: true, maintainAspectRatio: false, cutout: '65%',
