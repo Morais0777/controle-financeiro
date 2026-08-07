@@ -165,6 +165,8 @@ async function carregarLancamentos() {
   atualizarKPIs();
   renderUltimosLancamentos();
   renderTabelaLancamentos();
+  // Re-renderiza o gráfico sempre que os dados chegam do Supabase
+  requestAnimationFrame(() => renderGraficos());
 }
 
 // ── KPIs ───────────────────────────────────────
