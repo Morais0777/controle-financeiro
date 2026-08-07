@@ -231,10 +231,10 @@ function renderUltimosLancamentos() {
       </div>
       <div class="lancamento-info">
         <div class="lancamento-desc">${escapeHtml(l.descricao)}</div>
-        <div class="lancamento-data">${formatDate(l.data)} · ${getTipoLabel(l.tipo)}</div>
+        <div class="lancamento-data">${formatDate(l.data)} · ${getTipoLabel(l.categoria_id ? 'cat_'+l.categoria_id : l.tipo)}</div>
       </div>
       <div class="lancamento-valor" style="color:${l.tipo==='entrada'?'var(--color-entrada)':'var(--color-saida)'}">
-        ${l.tipo === 'entrada' ? '+' : '−'} ${formatCurrency(l.valor)}
+        ${l.tipo === 'entrada' ? '+' : '-'} ${formatCurrency(l.valor)}
       </div>
     </div>`;
   }).join('');
@@ -250,7 +250,16 @@ function renderTabelaLancamentos() {
   if (!container) return;
 
   const lista = lancamentos.filter(l => {
-    const matchTipo  = filtroTipo === 'todos' || l.tipo === filtroTipo;
+    let matchTipo;
+    if (filtroTipo === 'todos') {
+      matchTipo = true;
+    } else if (filtroTipo.startsWith('cat_')) {
+      // Filtro por categoria personalizada
+      const catId = filtroTipo.replace('cat_', '');
+      matchTipo = l.categoria_id === catId;
+    } else {
+      matchTipo = l.tipo === filtroTipo && !l.categoria_id;
+    }
     const matchBusca = l.descricao.toLowerCase().includes(filtroBusca.toLowerCase());
     return matchTipo && matchBusca;
   });
@@ -274,6 +283,9 @@ function renderTabelaLancamentos() {
         <option value="investimento"   ${filtroTipo==='investimento'?'selected':''}>Investimentos</option>
         <option value="emprestimo"     ${filtroTipo==='emprestimo'?'selected':''}>Empréstimos</option>
         <option value="reserva"        ${filtroTipo==='reserva'?'selected':''}>Reserva</option>
+        ${categorias.length > 0 ? '<optgroup label="Categorias">' +
+          categorias.map(c => `<option value="cat_${c.id}" ${filtroTipo==='cat_'+c.id?'selected':''}>${escapeHtml(c.nome)}</option>`).join('') +
+          '</optgroup>' : ''}
       </select>
       <button id="btnNovoLancamento" class="btn btn-primary btn-sm">
         <i class="ti ti-plus"></i>Novo
@@ -309,7 +321,7 @@ function renderTabelaLancamentos() {
           ${lista.map(l => `
             <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:10px">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-                <span class="tipo-badge ${l.tipo}">${getTipoLabel(l.tipo)}</span>
+                ${getTipoBadgeHtml(l)}
                 <div style="display:flex;gap:6px">
                   <button class="btn-editar-lanc" data-id="${l.id}"
                     style="width:34px;height:34px;border:1px solid var(--border);background:var(--surface);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
@@ -352,7 +364,7 @@ function renderTabelaLancamentos() {
               <div style="display:flex;align-items:center;padding:11px 14px;border-bottom:1px solid var(--border);gap:8px;transition:background 150ms"
                 onmouseenter="this.style.background='var(--surface-alt)'" onmouseleave="this.style.background=''">
                 <div style="width:100px;flex-shrink:0">
-                  <span class="tipo-badge ${l.tipo}">${getTipoLabel(l.tipo)}</span>
+                  ${getTipoBadgeHtml(l)}
                 </div>
                 <div style="flex:1;min-width:0">
                   <div style="font-size:13.5px;font-weight:500;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(l.descricao)}</div>
@@ -483,9 +495,17 @@ function renderTiposNoModal(tipoSelecionado) {
 function atualizarSugestoesFixos(tipo) {
   const container = document.getElementById('sugestoesFixos');
   if (!container) return;
-  const fixosFiltrados = itensFixos.filter(f =>
-    tipo === 'cartao_credito' ? f.tipo === 'saida' : f.tipo === tipo
-  );
+
+  let fixosFiltrados;
+  if (tipo.startsWith('cat_')) {
+    // Categoria personalizada: filtra itens fixos com mesmo categoria_id
+    const catId = tipo.replace('cat_', '');
+    fixosFiltrados = itensFixos.filter(f => f.categoria_id === catId);
+  } else {
+    fixosFiltrados = itensFixos.filter(f =>
+      tipo === 'cartao_credito' ? f.tipo === 'saida' : f.tipo === tipo
+    );
+  }
   if (fixosFiltrados.length === 0) { container.style.display = 'none'; return; }
   container.style.display = 'block';
   container.innerHTML = `
@@ -1166,7 +1186,7 @@ function mostrarPreviewImportacao() {
           <div style="display:grid;grid-template-columns:100px 1fr 80px 110px;gap:8px;padding:8px 12px;border-top:1px solid var(--border);font-size:13px;align-items:center">
             <div style="color:var(--text-secondary)">${formatDate(l.data)}</div>
             <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(l.descricao)}</div>
-            <div><span class="tipo-badge ${l.tipo}" style="font-size:11px">${getTipoLabel(l.tipo)}</span></div>
+            <div>${getTipoBadgeHtml(l)}</div>
             <div style="text-align:right;font-weight:600;color:${l.tipo==='entrada'?'var(--color-entrada)':'var(--color-saida)'}">${formatCurrency(l.valor)}</div>
           </div>
         `).join('')}
@@ -1580,6 +1600,33 @@ function getTipoIcon(tipo) {
     emprestimo:'ti-handshake', reserva:'ti-shield-check'
   };
   return icons[tipo] || 'ti-tag';
+}
+
+// Retorna cor e bg de uma categoria personalizada pelo id
+function getCatStyle(catId) {
+  const cat = categorias.find(c => c.id === catId);
+  if (!cat) return { cor: 'var(--text-secondary)', bg: 'var(--surface-alt)' };
+  const hex = cat.cor || '#374060';
+  // Converte hex para rgba com opacidade para o bg
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return { cor: hex, bg: `rgba(${r},${g},${b},0.12)` };
+}
+
+// Retorna o HTML do badge para qualquer tipo (nativo ou personalizado)
+function getTipoBadgeHtml(lancamento) {
+  const tipo = lancamento.tipo;
+  const catId = lancamento.categoria_id;
+
+  // Categoria personalizada: usa cor dinâmica
+  if (catId) {
+    const style = getCatStyle(catId);
+    const nome  = getTipoLabel('cat_' + catId);
+    return `<span class="tipo-badge" style="background:${style.bg};color:${style.cor}">${nome}</span>`;
+  }
+  // Tipo nativo: usa classe CSS existente
+  return `<span class="tipo-badge ${tipo}">${getTipoLabel(tipo)}</span>`;
 }
 
 function getTipoLabel(tipo) {

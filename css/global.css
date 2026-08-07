@@ -480,6 +480,9 @@
 .tipo-badge.emprestimo  { background: var(--color-emprestimo-bg); color: var(--color-emprestimo); }
 .tipo-badge.reserva     { background: var(--color-reserva-bg); color: var(--color-reserva); }
 
+/* Badge dinâmico para categorias personalizadas — cor via style inline */
+.tipo-badge[style] { /* cor já vem pelo style, apenas garante padding/radius */ }
+
 .lancamento-row-desc { flex: 1; font-size: 13.5px; font-weight: 500; color: var(--text-primary); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lancamento-row-data { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
 .lancamento-row-valor { font-size: 13.5px; font-weight: 600; flex-shrink: 0; min-width: 110px; text-align: right; }
