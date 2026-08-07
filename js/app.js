@@ -172,7 +172,7 @@ async function carregarLancamentos() {
 // ── KPIs ───────────────────────────────────────
 
 function calcularTotais() {
-  const t = { entrada:0, saida:0, cartao_credito:0, investimento:0, emprestimo:0 };
+  const t = { entrada:0, saida:0, cartao_credito:0, investimento:0, emprestimo:0, rendimento:0 };
   let totalCats = 0; // soma de todas as categorias personalizadas
   lancamentos.forEach(l => {
     const tipo  = l.tipo?.trim();
@@ -185,7 +185,7 @@ function calcularTotais() {
   });
   // totalSaidas = tudo que sai (saída + cartão + investimento + empréstimo + categorias personalizadas)
   const totalSaidas = t.saida + t.cartao_credito + t.investimento + t.emprestimo + totalCats;
-  const saldo       = t.entrada - totalSaidas;
+  const saldo       = t.entrada + t.rendimento - totalSaidas;
   return { ...t, totalSaidas, saldo };
 }
 
@@ -287,6 +287,7 @@ function renderTabelaLancamentos() {
         <option value="cartao_credito" ${filtroTipo==='cartao_credito'?'selected':''}>Cartão</option>
         <option value="investimento"   ${filtroTipo==='investimento'?'selected':''}>Investimentos</option>
         <option value="emprestimo"     ${filtroTipo==='emprestimo'?'selected':''}>Empréstimos</option>
+        <option value="rendimento"     ${filtroTipo==='rendimento'?'selected':''}>Rendimentos</option>
 
         ${categorias.length > 0 ? '<optgroup label="Categorias">' +
           categorias.map(c => `<option value="cat_${c.id}" ${filtroTipo==='cat_'+c.id?'selected':''}>${escapeHtml(c.nome)}</option>`).join('') +
@@ -479,6 +480,7 @@ function renderTiposNoModal(tipoSelecionado) {
     { value:'cartao_credito', label:'Cartão de crédito' },
     { value:'investimento',   label:'Investimento' },
     { value:'emprestimo',     label:'Empréstimo' },
+    { value:'rendimento',     label:'Rendimento' },
   ];
   select.innerHTML = tiposFixos.map(t =>
     `<option value="${t.value}" ${tipoSelecionado===t.value?'selected':''}>${t.label}</option>`
@@ -1169,7 +1171,7 @@ function processarArquivoXLSX(input) {
         { indices: [0, 1], tipo: 'entrada'     },
         { indices: [2, 3], tipo: 'saida'        },
         { indices: [4, 5], tipo: 'emprestimo'   },
-        { indices: [6, 7], tipo: 'entrada'      }, // RENDIMENTOS → entrada
+        { indices: [6, 7], tipo: 'rendimento'   }, // RENDIMENTOS → tipo nativo
         { indices: [8, 9], tipo: 'investimento' },
       ];
 
@@ -1505,7 +1507,7 @@ async function renderDashboard() {
   // Calcular totais — tipos nativos + categorias personalizadas separadas
   const totaisMap = {
     entrada:0, saida:0, cartao_credito:0,
-    investimento:0, emprestimo:0
+    investimento:0, emprestimo:0, rendimento:0
   };
   const totaisCatDash = {}; // { [categoria_id]: valor }
 
@@ -1522,7 +1524,7 @@ async function renderDashboard() {
   const totalSaidas = totaisMap.saida + totaisMap.cartao_credito
                     + totaisMap.investimento + totaisMap.emprestimo
                     + Object.values(totaisCatDash).reduce((a, b) => a + b, 0);
-  const saldo       = totaisMap.entrada - totalSaidas;
+  const saldo       = totaisMap.entrada + totaisMap.rendimento - totalSaidas;
 
   // Tipos nativos com movimentação
   const tiposConfig = [
@@ -1531,7 +1533,7 @@ async function renderDashboard() {
     { key:'cartao_credito',label:'Cartão',          icon:'ti-credit-card',    cor:'var(--color-cartao)',       corHex:'#b45309' },
     { key:'investimento',  label:'Investimentos',  icon:'ti-building-bank',  cor:'var(--color-investimento)', corHex:'#1a56db' },
     { key:'emprestimo',    label:'Empréstimos',    icon:'ti-handshake',      cor:'var(--color-emprestimo)',   corHex:'#6d28d9' },
-
+    { key:'rendimento',    label:'Rendimentos',    icon:'ti-rosette',        cor:'var(--color-rendimento)',   corHex:'#0891b2' },
   ];
   const tiposAtivos = tiposConfig.filter(t => totaisMap[t.key] > 0);
 
@@ -1738,7 +1740,7 @@ function getTipoIcon(tipo) {
   const icons = {
     entrada:'ti-trending-up', saida:'ti-trending-down',
     cartao_credito:'ti-credit-card', investimento:'ti-building-bank',
-    emprestimo:'ti-handshake'
+    emprestimo:'ti-handshake', rendimento:'ti-rosette'
   };
   return icons[tipo] || 'ti-tag';
 }
@@ -1778,7 +1780,7 @@ function getTipoLabel(tipo) {
   }
   const labels = {
     entrada:'Entrada', saida:'Saída', cartao_credito:'Cartão',
-    investimento:'Investimento', emprestimo:'Empréstimo'
+    investimento:'Investimento', emprestimo:'Empréstimo', rendimento:'Rendimento'
   };
   return labels[tipo] || tipo;
 }
