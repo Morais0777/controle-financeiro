@@ -1346,8 +1346,29 @@ async function confirmarImportacao() {
   for (const [chave, lancsMes] of Object.entries(porMes)) {
     const [mes, ano] = chave.split('/').map(Number);
     if (progresso) progresso.textContent = `Importando ${new Date(ano, mes-1).toLocaleString('pt-BR', {month:'long'})} ${ano}...`;
-    await garantirCompetencia(mes, ano);
-    const competencia_id = await getCompetenciaId(mes, ano);
+
+    // Busca a competencia diretamente no banco (ignora cache em memória)
+    let { data: compData, error: compErr } = await window.supabase
+      .from('competencias').select('id')
+      .eq('user_id', currentUser.id).eq('mes', mes).eq('ano', ano).maybeSingle();
+
+    if (!compData) {
+      // Não existe ainda — cria
+      const { data: nova, error: errNova } = await window.supabase
+        .from('competencias')
+        .insert({ user_id: currentUser.id, mes, ano, ativa: false })
+        .select('id').single();
+      if (errNova || !nova) {
+        console.error(`Erro ao criar competência ${mes}/${ano}:`, errNova);
+        ignorados += lancsMes.length;
+        continue;
+      }
+      compData = nova;
+    }
+
+    const competencia_id = compData.id;
+    console.log(`[Import] ${mes}/${ano} → competencia_id: ${competencia_id}`);
+
     const { data: existentes } = await window.supabase
       .from('lancamentos').select('descricao,data,valor')
       .eq('user_id', currentUser.id).eq('competencia_id', competencia_id);
@@ -1361,7 +1382,12 @@ async function confirmarImportacao() {
           tipo: l.tipo, descricao: l.descricao, valor: l.valor, data: l.data, pago: true,
         }))
       );
-      if (!error) importados += paraInserir.length;
+      if (error) {
+        console.error(`[Import] Erro ao inserir ${mes}/${ano}:`, error);
+        ignorados += paraInserir.length;
+      } else {
+        importados += paraInserir.length;
+      }
     }
   }
 
@@ -1822,3 +1848,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // A pré-seleção dos selects de relatório é feita por initRelatorios() em relatorios.js
 });
+
+
