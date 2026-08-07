@@ -538,7 +538,7 @@ function closeModal() {
 }
 
 async function salvarLancamento() {
-  const tipo       = document.getElementById('lancTipo').value;
+  const tipoRaw    = document.getElementById('lancTipo').value;
   const descricao  = document.getElementById('lancDescricao').value.trim();
   const valor      = parseFloat(document.getElementById('lancValor').value);
   const data       = document.getElementById('lancData').value;
@@ -548,9 +548,22 @@ async function salvarLancamento() {
   if (!valor || valor <= 0) { showToast('Informe um valor válido', 'warning'); return; }
   if (!data) { showToast('Informe a data', 'warning'); return; }
 
+  // Resolve categoria personalizada: usa o tipo real da categoria (entrada/saida/ambos→saida)
+  let tipo = tipoRaw;
+  let categoria_id = null;
+  if (tipoRaw.startsWith('cat_')) {
+    const catId = tipoRaw.replace('cat_', '');
+    const cat   = categorias.find(c => c.id === catId);
+    if (!cat) { showToast('Categoria não encontrada', 'error'); return; }
+    categoria_id = catId;
+    // tipo 'ambos' → salva como 'saida' por padrão; entrada e saida usam direto
+    tipo = cat.tipo === 'entrada' ? 'entrada' : 'saida';
+  }
+
   const d              = new Date(data + 'T12:00:00');
   const competencia_id = await getCompetenciaId(d.getMonth() + 1, d.getFullYear());
-  const payload        = { tipo, descricao, valor, data, observacao: observacao || null, pago: true };
+  const payload        = { tipo, descricao, valor, data, observacao: observacao || null, pago: true,
+                           categoria_id: categoria_id };
 
   let error;
   if (editingId) {
@@ -586,25 +599,36 @@ async function deletarLancamento(id) {
 // ── ITENS FIXOS ────────────────────────────────
 
 async function salvarItemFixo() {
-  const nome  = document.getElementById('fixoNome').value.trim();
-  const tipo  = document.getElementById('fixoTipo').value;
-  const valor = parseFloat(document.getElementById('fixoValor').value);
-  const dia   = parseInt(document.getElementById('fixoDia').value) || null;
-  const obs   = document.getElementById('fixoObs').value.trim();
+  const nome     = document.getElementById('fixoNome').value.trim();
+  const tipoRaw  = document.getElementById('fixoTipo').value;
+  const valor    = parseFloat(document.getElementById('fixoValor').value);
+  const dia      = parseInt(document.getElementById('fixoDia').value) || null;
+  const obs      = document.getElementById('fixoObs').value.trim();
 
   if (!nome)              { showToast('Informe o nome do item', 'warning'); return; }
   if (!valor || valor <= 0) { showToast('Informe um valor válido', 'warning'); return; }
 
+  // Resolve categoria personalizada para tipo real
+  let tipo = tipoRaw;
+  let categoria_id = null;
+  if (tipoRaw.startsWith('cat_')) {
+    const catId = tipoRaw.replace('cat_', '');
+    const cat   = categorias.find(c => c.id === catId);
+    if (!cat) { showToast('Categoria não encontrada', 'error'); return; }
+    categoria_id = catId;
+    tipo = cat.tipo === 'entrada' ? 'entrada' : 'saida';
+  }
+
   let error;
   if (editingFixoId) {
     const res = await window.supabase.from('itens_fixos')
-      .update({ nome, tipo, valor, dia_vencimento: dia, observacao: obs || null })
+      .update({ nome, tipo, valor, dia_vencimento: dia, observacao: obs || null, categoria_id: categoria_id || null })
       .eq('id', editingFixoId);
     error = res.error;
   } else {
     const res = await window.supabase.from('itens_fixos')
       .insert({ user_id: currentUser.id, nome, tipo, valor,
-                dia_vencimento: dia, observacao: obs || null, ativo: true });
+                dia_vencimento: dia, observacao: obs || null, ativo: true, categoria_id: categoria_id || null });
     error = res.error;
   }
 
@@ -649,6 +673,26 @@ function cancelarEdicaoFixo() {
 
 async function carregarFixos() {
   await carregarItensFixos();
+  await carregarCategoriasList();
+
+  // Popular o select de tipo com as categorias personalizadas
+  const fixoTipoSel = document.getElementById('fixoTipo');
+  if (fixoTipoSel) {
+    const tiposBase = [
+      { value: 'entrada', label: 'Entrada' },
+      { value: 'saida',   label: 'Saída'   },
+    ];
+    fixoTipoSel.innerHTML = tiposBase.map(t =>
+      `<option value="${t.value}">${t.label}</option>`
+    ).join('');
+    if (categorias.length > 0) {
+      fixoTipoSel.innerHTML += `<optgroup label="Categorias personalizadas">` +
+        categorias.map(c =>
+          `<option value="cat_${c.id}">${escapeHtml(c.nome)}</option>`
+        ).join('') + `</optgroup>`;
+    }
+  }
+
   const container = document.getElementById('listaFixos');
   const count     = document.getElementById('fixoCount');
   if (!container) return;
