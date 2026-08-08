@@ -479,10 +479,7 @@ function openLancamento(tipo = 'saida') {
   document.getElementById('lancDescricao').value    = '';
   document.getElementById('lancValor').value        = '';
   document.getElementById('lancObservacao').value   = '';
-  document.getElementById('lancData').value         =
-    competenciaAtiva
-      ? `${competenciaAtiva.ano}-${String(competenciaAtiva.mes).padStart(2,'0')}-01`
-      : new Date().toISOString().split('T')[0];
+  document.getElementById('lancData').value         = new Date().toISOString().split('T')[0];
 
   renderTiposNoModal(tipo);
   carregarItensFixos().then(() => atualizarSugestoesFixos(tipo));
@@ -1648,7 +1645,54 @@ function renderGraficos() {
 
 // ── DASHBOARD — período independente ───────────
 
-function initDashboard() {
+async function preencherSelectsAnoMes() {
+  // Garante que competencias está atualizado do banco
+  if (!competencias || competencias.length === 0) {
+    await carregarCompetencias();
+  }
+
+  const mesesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                      'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const anoAtual = new Date().getFullYear();
+  const mesAtual = new Date().getMonth() + 1;
+
+  // Anos únicos ordenados do mais recente ao mais antigo
+  const anos = [...new Set(competencias.map(c => parseInt(c.ano)))].sort((a, b) => b - a);
+  // Meses únicos ordenados
+  const mesesComDados = [...new Set(competencias.map(c => parseInt(c.mes)))].sort((a, b) => a - b);
+
+  // ── Dashboard ──
+  const dashAno = document.getElementById('dashAno');
+  const dashMes = document.getElementById('dashMes');
+  if (dashAno && anos.length > 0) {
+    dashAno.innerHTML = anos.map(a =>
+      `<option value="${a}" ${a === anoAtual ? 'selected' : ''}>${a}</option>`
+    ).join('');
+  }
+  if (dashMes && mesesComDados.length > 0) {
+    dashMes.innerHTML = mesesComDados.map(m =>
+      `<option value="${m}" ${m === mesAtual ? 'selected' : ''}>${mesesNomes[m - 1]}</option>`
+    ).join('');
+  }
+
+  // ── Relatórios ──
+  const relAno = document.getElementById('relAno');
+  const relMes = document.getElementById('relMes');
+  if (relAno && anos.length > 0) {
+    relAno.innerHTML = anos.map(a =>
+      `<option value="${a}" ${a === anoAtual ? 'selected' : ''}>${a}</option>`
+    ).join('');
+  }
+  if (relMes && mesesComDados.length > 0) {
+    relMes.innerHTML = mesesComDados.map(m =>
+      `<option value="${m}" ${m === mesAtual ? 'selected' : ''}>${mesesNomes[m - 1]}</option>`
+    ).join('');
+  }
+}
+
+async function initDashboard() {
+  // Preenche anos e meses com base nas competências reais do banco
+  await preencherSelectsAnoMes();
   // Pré-selecionar trimestre atual
   const mesAtual  = new Date().getMonth() + 1;
   const trimAtual = Math.ceil(mesAtual / 3);
@@ -1874,7 +1918,7 @@ function navigateTo(page) {
   currentPage = page;
   if (window.innerWidth < 768) document.getElementById('sidebar').classList.remove('open');
   if (page === 'dashboard') setTimeout(initDashboard, 50);
-  if (page === 'relatorios') setTimeout(initRelatorios, 50);
+  if (page === 'relatorios') setTimeout(async () => { await preencherSelectsAnoMes(); initRelatorios(); }, 50);
 }
 
 function toggleSidebar() {
