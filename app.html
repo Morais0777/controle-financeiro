@@ -14,6 +14,71 @@
     .cfg-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
     .cfg-grid-form{display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
     @media(max-width:768px){.cfg-tabs-bar{width:100%;flex-wrap:wrap}.cfg-tabs-bar .cfg-tab{flex:1;text-align:center;min-width:calc(33% - 2px)}.cfg-grid-2,.cfg-grid-form{grid-template-columns:1fr}}
+
+    /* ── Responsividade: área de importação XLSX ── */
+    #cfg-importacao{box-sizing:border-box;width:100%;max-width:100%}
+    #cfg-importacao .card{box-sizing:border-box;width:100%;max-width:100%}
+
+    /* Área de drop/seleção do arquivo */
+    #importacaoDropArea{
+      box-sizing:border-box;
+      width:100%;
+      max-width:100%;
+      padding:24px 16px;
+      word-break:break-word;
+    }
+
+    /* Pré-visualização: impede tabelas largas de estourar o viewport */
+    #previewImportacao{
+      width:100%;
+      max-width:100%;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    #previewImportacao table{
+      min-width:0;
+      width:100%;
+      border-collapse:collapse;
+    }
+
+    /* Botões Cancelar + Confirmar */
+    #importacaoBotoes{
+      display:flex;
+      gap:10px;
+      margin-top:20px;
+      flex-wrap:wrap;
+    }
+    #importacaoBotoes .btn{
+      box-sizing:border-box;
+      min-width:0;
+    }
+
+    /* Header do Step 2 (título + voltar) */
+    #importacaoStep2HeaderRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:16px;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    @media(max-width:768px){
+      /* Tab bar: 5 abas — 2 na primeira linha, 3 na segunda (ou wrapping natural) */
+      #cfgTabsBar{width:100%!important;flex-wrap:wrap!important}
+      #cfgTabsBar .cfg-tab{flex:1 1 auto!important;text-align:center!important;min-width:calc(33% - 4px)!important}
+
+      /* Área de drop menor no mobile */
+      #importacaoDropArea{padding:20px 12px!important}
+
+      /* Botões empilham verticalmente em telas muito pequenas */
+      #importacaoBotoes{flex-direction:column}
+      #importacaoBotoes .btn{flex:none!important;width:100%!important}
+    }
+
+    @media(max-width:430px){
+      #importacaoDropArea{padding:16px 10px!important}
+    }
   </style>
 </head>
 <body>
@@ -570,7 +635,7 @@
                   com subcolunas <strong>NOME</strong> e <strong>VALOR</strong>.<br>
                   A data será definida como o <strong>dia 1 do mês</strong> de cada aba.
                 </p>
-                <div style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:32px;text-align:center;background:var(--surface-alt);cursor:pointer" onclick="document.getElementById('inputXlsx').click()">
+                <div id="importacaoDropArea" style="border:2px dashed var(--border);border-radius:var(--radius-lg);padding:32px;text-align:center;background:var(--surface-alt);cursor:pointer;box-sizing:border-box" onclick="document.getElementById('inputXlsx').click()">
                   <i class="ti ti-file-spreadsheet" style="font-size:40px;color:var(--accent);display:block;margin-bottom:12px"></i>
                   <div style="font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:4px">Clique para selecionar o arquivo</div>
                   <div style="font-size:12.5px;color:var(--text-muted)">Formatos aceitos: .xlsx, .xls</div>
@@ -582,16 +647,16 @@
             <!-- STEP 2: Preview -->
             <div id="importacaoStep2" style="display:none">
               <div class="card">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <div id="importacaoStep2HeaderRow">
                   <div class="card-title">Pré-visualização da importação</div>
                   <button class="btn btn-ghost btn-sm" onclick="iniciarImportacao()">
                     <i class="ti ti-arrow-left"></i> Voltar
                   </button>
                 </div>
                 <div id="previewImportacao"></div>
-                <div style="display:flex;gap:10px;margin-top:20px">
-                  <button class="btn btn-secondary" style="flex:1" onclick="iniciarImportacao()">Cancelar</button>
-                  <button class="btn btn-primary" style="flex:2" onclick="confirmarImportacao()">
+                <div id="importacaoBotoes">
+                  <button class="btn btn-secondary" style="flex:1;min-width:0" onclick="iniciarImportacao()">Cancelar</button>
+                  <button class="btn btn-primary" style="flex:2;min-width:0" onclick="confirmarImportacao()">
                     <i class="ti ti-cloud-upload"></i> Confirmar importação
                   </button>
                 </div>
@@ -686,17 +751,72 @@
       const gridFixos = document.getElementById('cfgGridFixos');
       const gridComp  = document.getElementById('cfgGridComp');
 
+      // ── Tab bar: forçar wrap em mobile para que "Importar" não saia da tela ──
       if (tabsBar) {
-        tabsBar.style.width = mobile ? '100%' : 'fit-content';
+        tabsBar.style.width     = mobile ? '100%' : 'fit-content';
+        tabsBar.style.flexWrap  = mobile ? 'wrap'  : 'nowrap';
         tabsBar.querySelectorAll('.cfg-tab').forEach(t => {
-          t.style.flex = mobile ? '1' : '';
-          t.style.textAlign = mobile ? 'center' : '';
+          t.style.flex       = mobile ? '1 1 auto' : '';
+          t.style.textAlign  = mobile ? 'center'   : '';
+          t.style.minWidth   = mobile ? 'calc(33% - 4px)' : '';
         });
       }
       if (gridPerf)  gridPerf.style.gridTemplateColumns  = mobile ? '1fr' : '1fr 1fr';
       if (gridCat)   gridCat.style.gridTemplateColumns   = mobile ? '1fr' : '340px 1fr';
       if (gridFixos) gridFixos.style.gridTemplateColumns = mobile ? '1fr' : '340px 1fr';
       if (gridComp)  gridComp.style.gridTemplateColumns  = mobile ? '1fr' : '1fr 1fr';
+
+      // ── Área de importação: garantir que nenhum elemento ultrapasse o viewport ──
+      const cfgImportacao = document.getElementById('cfg-importacao');
+      if (cfgImportacao) {
+        // Container principal
+        cfgImportacao.style.boxSizing = 'border-box';
+        cfgImportacao.style.maxWidth  = '100%';
+        cfgImportacao.style.width     = '100%';
+
+        // Área de drop de arquivo
+        const dropArea = document.getElementById('importacaoDropArea');
+        if (dropArea) {
+          dropArea.style.boxSizing = 'border-box';
+          dropArea.style.maxWidth  = '100%';
+          dropArea.style.width     = '100%';
+          if (mobile) {
+            dropArea.style.padding = '20px 12px';
+          } else {
+            dropArea.style.padding = '32px';
+          }
+        }
+
+        // Pré-visualização: scroll horizontal isolado, não deixa a página toda crescer
+        const preview = document.getElementById('previewImportacao');
+        if (preview) {
+          preview.style.width       = '100%';
+          preview.style.maxWidth    = '100%';
+          preview.style.overflowX   = 'auto';
+          preview.style.webkitOverflowScrolling = 'touch';
+        }
+
+        // Container dos botões Cancelar / Confirmar
+        const botoes = document.getElementById('importacaoBotoes');
+        if (botoes) {
+          botoes.style.display    = 'flex';
+          botoes.style.gap        = '10px';
+          botoes.style.marginTop  = '20px';
+          botoes.style.flexWrap   = mobile ? 'wrap' : 'nowrap';
+          botoes.querySelectorAll('.btn').forEach((btn, i) => {
+            btn.style.boxSizing = 'border-box';
+            btn.style.minWidth  = '0';
+            if (mobile) {
+              btn.style.flex  = 'none';
+              btn.style.width = '100%';
+            } else {
+              // Restaura flex original: Cancelar flex:1, Confirmar flex:2
+              btn.style.flex  = (i === 0) ? '1' : '2';
+              btn.style.width = '';
+            }
+          });
+        }
+      }
     }
     document.addEventListener('DOMContentLoaded', aplicarLayoutCfgMobile);
     window.addEventListener('resize', aplicarLayoutCfgMobile);
