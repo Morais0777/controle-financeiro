@@ -1262,6 +1262,9 @@ function processarArquivoXLSX(input) {
   reader.readAsArrayBuffer(file);
 }
 
+// variável global para armazenar o modo escolhido
+let modoImportacaoSubstituir = false;
+
 function mostrarPreviewImportacao() {
   if (!dadosImportacao) return;
   const { lancamentosProcessados, mesesEncontrados } = dadosImportacao;
@@ -1296,22 +1299,19 @@ function mostrarPreviewImportacao() {
       </div>
     </div>
 
-    <!-- Seletor de modo -->
     <div style="background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px">
-      <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:10px">
-        <i class="ti ti-settings" style="font-size:14px;margin-right:4px"></i>Modo de importação
-      </div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:10px">Modo de importação</div>
       <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:8px">
-        <input type="radio" id="modoIgnorar" name="modoImportacao" value="ignorar" checked
-          style="margin-top:3px;accent-color:var(--accent)">
+        <input type="radio" id="radioIgnorar" name="modoImport" value="ignorar" checked
+          style="margin-top:3px;accent-color:var(--accent)" onchange="modoImportacaoSubstituir=false">
         <div>
           <div style="font-size:13px;font-weight:500;color:var(--text-primary)">Ignorar duplicatas</div>
-          <div style="font-size:12px;color:var(--text-muted)">Importa apenas lançamentos novos. Os que já existem são mantidos.</div>
+          <div style="font-size:12px;color:var(--text-muted)">Importa apenas lançamentos novos. Os existentes são mantidos.</div>
         </div>
       </label>
       <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
-        <input type="radio" id="modoSubstituir" name="modoImportacao" value="substituir"
-          style="margin-top:3px;accent-color:var(--color-saida)">
+        <input type="radio" id="radioSubstituir" name="modoImport" value="substituir"
+          style="margin-top:3px;accent-color:var(--color-saida)" onchange="modoImportacaoSubstituir=true">
         <div>
           <div style="font-size:13px;font-weight:500;color:var(--color-saida)">Substituir todos os meses</div>
           <div style="font-size:12px;color:var(--text-muted)">Apaga tudo dos meses encontrados e reimporta da planilha.</div>
@@ -1345,28 +1345,16 @@ function mostrarPreviewImportacao() {
       </div>
     </div>
   `;
+  // Garante que começa sempre em "Ignorar" ao exibir o preview
+  modoImportacaoSubstituir = false;
 }
 
-function confirmarImportacao() {
+async function confirmarImportacao() {
   if (!dadosImportacao) return;
-
-  // Lê o modo diretamente do radio selecionado no DOM
-  const modoSubstituir = document.getElementById('modoSubstituir')?.checked === true;
-
-  if (modoSubstituir) {
-    // Pede confirmação antes de apagar dados
-    showConfirm(
-      'Atenção: substituição de dados',
-      `Todos os lançamentos dos meses encontrados serão <strong style="color:var(--color-saida)">permanentemente apagados</strong> e substituídos pelos dados da planilha.<br><br>Essa ação não pode ser desfeita.`,
-      () => _executarImportacao(true)
-    );
-  } else {
-    _executarImportacao(false);
-  }
-}
-
-async function _executarImportacao(modoSubstituir) {
   const { lancamentosProcessados } = dadosImportacao;
+
+  // Captura o modo AGORA, antes de qualquer manipulação de DOM
+  const substituir = modoImportacaoSubstituir === true;
 
   const s2 = document.getElementById('importacaoStep2');
   const s3 = document.getElementById('importacaoStep3');
@@ -1375,15 +1363,20 @@ async function _executarImportacao(modoSubstituir) {
   const progresso = document.getElementById('importacaoProgresso');
   if (progresso) progresso.textContent = 'Iniciando importação...';
 
-  let importados = 0, substituidos = 0, ignorados = 0;
+  console.log(`[Import] Modo: ${substituir ? 'SUBSTITUIR' : 'IGNORAR DUPLICATAS'}`);
+  console.log(`[Import] Total de lançamentos a processar: ${lancamentosProcessados.length}`);
 
-  // Agrupa lançamentos por mês/ano
+  let importados = 0, ignorados = 0;
+
+  // Agrupa por mês/ano
   const porMes = {};
   lancamentosProcessados.forEach(l => {
     const chave = `${l.mes}/${l.ano}`;
     if (!porMes[chave]) porMes[chave] = [];
     porMes[chave].push(l);
   });
+
+  console.log(`[Import] Meses a processar: ${Object.keys(porMes).join(', ')}`);
 
   await carregarCompetencias();
 
@@ -1398,7 +1391,6 @@ async function _executarImportacao(modoSubstituir) {
       .eq('user_id', currentUser.id).eq('mes', mes).eq('ano', ano).maybeSingle();
 
     if (!compData) {
-      // Cria competência se não existir
       const { data: nova, error: errNova } = await window.supabase
         .from('competencias')
         .insert({ user_id: currentUser.id, mes, ano, ativa: false })
@@ -1412,44 +1404,36 @@ async function _executarImportacao(modoSubstituir) {
     }
 
     const competencia_id = compData.id;
-    console.log(`[Import] ${mes}/${ano} → id: ${competencia_id} | modo: ${modoSubstituir ? 'SUBSTITUIR' : 'IGNORAR'}`);
+    console.log(`[Import] ${mes}/${ano} → competencia_id: ${competencia_id} | ${lancsMes.length} lançamentos`);
 
-    if (modoSubstituir) {
-      // ── MODO SUBSTITUIR: apaga tudo do mês e reinsere ──
+    if (substituir) {
+      // Apaga TODOS os lançamentos do mês e reinsere tudo
       const { error: errDel } = await window.supabase
-        .from('lancamentos')
-        .delete()
-        .eq('user_id', currentUser.id)
-        .eq('competencia_id', competencia_id);
+        .from('lancamentos').delete()
+        .eq('user_id', currentUser.id).eq('competencia_id', competencia_id);
 
       if (errDel) {
-        console.error(`[Import] Erro ao limpar ${mes}/${ano}:`, errDel);
+        console.error(`[Import] Erro ao apagar ${mes}/${ano}:`, errDel);
         ignorados += lancsMes.length;
         continue;
       }
 
       const { error: errIns } = await window.supabase.from('lancamentos').insert(
         lancsMes.map(l => ({
-          user_id: currentUser.id,
-          competencia_id,
-          tipo:      l.tipo,
-          descricao: l.descricao,
-          valor:     l.valor,
-          data:      l.data,
-          pago:      true,
+          user_id: currentUser.id, competencia_id,
+          tipo: l.tipo, descricao: l.descricao, valor: l.valor, data: l.data, pago: true,
         }))
       );
-
       if (errIns) {
         console.error(`[Import] Erro ao inserir ${mes}/${ano}:`, errIns);
         ignorados += lancsMes.length;
       } else {
-        substituidos += lancsMes.length;
-        importados   += lancsMes.length;
+        importados += lancsMes.length;
+        console.log(`[Import] ✓ ${mes}/${ano} — ${lancsMes.length} inseridos`);
       }
 
     } else {
-      // ── MODO IGNORAR: só insere o que não existe ──
+      // Ignora duplicatas pela chave data|descricao|valor
       const { data: existentes } = await window.supabase
         .from('lancamentos').select('descricao,data,valor')
         .eq('user_id', currentUser.id).eq('competencia_id', competencia_id);
@@ -1460,19 +1444,13 @@ async function _executarImportacao(modoSubstituir) {
       const paraInserir = lancsMes.filter(
         l => !existentesSet.has(`${l.data}|${l.descricao}|${l.valor}`)
       );
-
       ignorados += lancsMes.length - paraInserir.length;
 
       if (paraInserir.length > 0) {
         const { error: errIns } = await window.supabase.from('lancamentos').insert(
           paraInserir.map(l => ({
-            user_id: currentUser.id,
-            competencia_id,
-            tipo:      l.tipo,
-            descricao: l.descricao,
-            valor:     l.valor,
-            data:      l.data,
-            pago:      true,
+            user_id: currentUser.id, competencia_id,
+            tipo: l.tipo, descricao: l.descricao, valor: l.valor, data: l.data, pago: true,
           }))
         );
         if (errIns) {
@@ -1489,8 +1467,8 @@ async function _executarImportacao(modoSubstituir) {
   atualizarSeletorCompetencia();
   await carregarLancamentos();
 
-  const linhaDetalhe = modoSubstituir
-    ? `<strong style="color:var(--color-entrada)">${importados}</strong> lançamentos substituídos`
+  const detalhe = substituir
+    ? `<strong style="color:var(--color-entrada)">${importados}</strong> lançamentos reimportados`
     : `<strong style="color:var(--color-entrada)">${importados}</strong> importados · <strong style="color:var(--text-muted)">${ignorados}</strong> ignorados (já existiam)`;
 
   if (progresso) progresso.innerHTML = `
@@ -1499,11 +1477,12 @@ async function _executarImportacao(modoSubstituir) {
         <i class="ti ti-circle-check" style="font-size:24px;color:var(--color-entrada)"></i>
       </div>
       <div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:4px">Importação concluída!</div>
-      <div style="font-size:13px;color:var(--text-secondary)">${linhaDetalhe}</div>
+      <div style="font-size:13px;color:var(--text-secondary)">${detalhe}</div>
       <button class="btn btn-primary btn-sm" style="margin-top:16px" onclick="showCfgTab('competencias')">Ver competências</button>
     </div>
   `;
   dadosImportacao = null;
+  modoImportacaoSubstituir = false;
 }
 
 // ── LAYOUT MOBILE CONFIGURAÇÕES ────────────────
