@@ -1363,12 +1363,14 @@ async function confirmarImportacao() {
   const progresso = document.getElementById('importacaoProgresso');
   if (progresso) progresso.textContent = 'Iniciando importação...';
 
+  console.log(`[Import] ════════════════════════════════════`);
   console.log(`[Import] Modo: ${substituir ? 'SUBSTITUIR' : 'IGNORAR DUPLICATAS'}`);
   console.log(`[Import] Total de lançamentos a processar: ${lancamentosProcessados.length}`);
 
-  let importados = 0, ignorados = 0;
+  let importados = 0, ignorados = 0, erros = 0;
+  const logLinhas = []; // log por mês para exibir no progresso
 
-  // Agrupa por mês/ano
+  // Agrupa por mês/ano — a chave determina a competência, não a competenciaAtiva
   const porMes = {};
   lancamentosProcessados.forEach(l => {
     const chave = `${l.mes}/${l.ano}`;
@@ -1376,67 +1378,133 @@ async function confirmarImportacao() {
     porMes[chave].push(l);
   });
 
-  console.log(`[Import] Meses a processar: ${Object.keys(porMes).join(', ')}`);
+  const mesesParaProcessar = Object.keys(porMes).sort((a, b) => {
+    const [mA, aA] = a.split('/').map(Number);
+    const [mB, aB] = b.split('/').map(Number);
+    return aA !== aB ? aA - aB : mA - mB;
+  });
 
-  await carregarCompetencias();
+  console.log(`[Import] Meses a processar: ${mesesParaProcessar.join(', ')}`);
+  console.log(`[Import] ════════════════════════════════════`);
 
-  for (const [chave, lancsMes] of Object.entries(porMes)) {
+  for (const chave of mesesParaProcessar) {
+    const lancsMes = porMes[chave];
     const [mes, ano] = chave.split('/').map(Number);
-    if (progresso) progresso.textContent =
-      `Importando ${new Date(ano, mes - 1).toLocaleString('pt-BR', { month: 'long' })} ${ano}...`;
 
-    // Busca competência no banco
-    let { data: compData } = await window.supabase
-      .from('competencias').select('id')
-      .eq('user_id', currentUser.id).eq('mes', mes).eq('ano', ano).maybeSingle();
+    // REGRA FUNDAMENTAL: o mês/ano da aba determina a competência.
+    // Nunca usamos competenciaAtiva aqui.
+    const nomeMes = new Date(ano, mes - 1).toLocaleString('pt-BR', { month: 'long' });
+    if (progresso) progresso.textContent = `Importando ${nomeMes} ${ano}...`;
 
+    console.log(`[Import] ── Processando ${mes}/${ano} (${nomeMes} ${ano}) ──`);
+    console.log(`[Import]    Lançamentos na aba: ${lancsMes.length}`);
+
+    // ── PASSO 1: Buscar competência no banco diretamente (sem usar array em memória)
+    let { data: compData, error: errBusca } = await window.supabase
+      .from('competencias')
+      .select('id,mes,ano')
+      .eq('user_id', currentUser.id)
+      .eq('mes', mes)
+      .eq('ano', ano)
+      .maybeSingle();
+
+    if (errBusca) {
+      console.error(`[Import]    ✗ ERRO ao buscar competência ${mes}/${ano}:`, errBusca);
+      logLinhas.push(`❌ ${nomeMes}/${ano}: erro ao buscar competência no banco — ${errBusca.message}`);
+      erros += lancsMes.length;
+      continue;
+    }
+
+    // ── PASSO 2: Criar competência se não existir
     if (!compData) {
+      console.log(`[Import]    Competência ${mes}/${ano} não encontrada. Criando...`);
       const { data: nova, error: errNova } = await window.supabase
         .from('competencias')
         .insert({ user_id: currentUser.id, mes, ano, ativa: false })
-        .select('id').single();
+        .select('id,mes,ano')
+        .single();
+
       if (errNova || !nova) {
-        console.error(`[Import] Erro ao criar competência ${mes}/${ano}:`, errNova);
-        ignorados += lancsMes.length;
+        console.error(`[Import]    ✗ ERRO ao criar competência ${mes}/${ano}:`, errNova);
+        logLinhas.push(`❌ ${nomeMes}/${ano}: falha ao criar competência — ${errNova?.message || 'erro desconhecido'}`);
+        erros += lancsMes.length;
         continue;
       }
+
       compData = nova;
+      console.log(`[Import]    Competência criada. ID: ${compData.id}`);
+    } else {
+      console.log(`[Import]    Competência encontrada. ID: ${compData.id}`);
     }
 
+    // ── PASSO 3: Confirmar que o ID obtido é do mês correto (defesa contra bugs futuros)
     const competencia_id = compData.id;
-    console.log(`[Import] ${mes}/${ano} → competencia_id: ${competencia_id} | ${lancsMes.length} lançamentos`);
+    const mesConfirmado  = parseInt(compData.mes, 10);
+    const anoConfirmado  = parseInt(compData.ano, 10);
 
+    if (mesConfirmado !== mes || anoConfirmado !== ano) {
+      console.error(`[Import]    ✗ ERRO CRÍTICO: competencia_id ${competencia_id} corresponde a ${mesConfirmado}/${anoConfirmado}, esperado ${mes}/${ano}!`);
+      logLinhas.push(`❌ ${nomeMes}/${ano}: incompatibilidade de competência detectada — importação deste mês cancelada`);
+      erros += lancsMes.length;
+      continue;
+    }
+
+    console.log(`[Import]    competencia_id validado: ${competencia_id} → ${mesConfirmado}/${anoConfirmado} ✓`);
+
+    // ── PASSO 4: Inserir lançamentos com o competencia_id correto para este mês
     if (substituir) {
-      // Apaga TODOS os lançamentos do mês e reinsere tudo
+      // Modo substituir: apaga tudo do mês e reinsere
       const { error: errDel } = await window.supabase
-        .from('lancamentos').delete()
-        .eq('user_id', currentUser.id).eq('competencia_id', competencia_id);
+        .from('lancamentos')
+        .delete()
+        .eq('user_id', currentUser.id)
+        .eq('competencia_id', competencia_id);
 
       if (errDel) {
-        console.error(`[Import] Erro ao apagar ${mes}/${ano}:`, errDel);
-        ignorados += lancsMes.length;
+        console.error(`[Import]    ✗ ERRO ao apagar lançamentos de ${mes}/${ano}:`, errDel);
+        logLinhas.push(`❌ ${nomeMes}/${ano}: erro ao limpar lançamentos existentes — ${errDel.message}`);
+        erros += lancsMes.length;
         continue;
       }
 
-      const { error: errIns } = await window.supabase.from('lancamentos').insert(
-        lancsMes.map(l => ({
-          user_id: currentUser.id, competencia_id,
-          tipo: l.tipo, descricao: l.descricao, valor: l.valor, data: l.data, pago: true,
-        }))
-      );
+      console.log(`[Import]    Lançamentos anteriores removidos.`);
+
+      const payload = lancsMes.map(l => ({
+        user_id:        currentUser.id,
+        competencia_id, // ← sempre o ID do mês correto, nunca da competenciaAtiva
+        tipo:           l.tipo,
+        descricao:      l.descricao,
+        valor:          l.valor,
+        data:           l.data,   // ← data já é AAAA-MM-01 do mês da aba
+        pago:           true,
+      }));
+
+      const { error: errIns } = await window.supabase.from('lancamentos').insert(payload);
+
       if (errIns) {
-        console.error(`[Import] Erro ao inserir ${mes}/${ano}:`, errIns);
-        ignorados += lancsMes.length;
+        console.error(`[Import]    ✗ ERRO ao inserir lançamentos de ${mes}/${ano}:`, errIns);
+        logLinhas.push(`❌ ${nomeMes}/${ano}: erro no INSERT — ${errIns.message}`);
+        erros += lancsMes.length;
       } else {
         importados += lancsMes.length;
-        console.log(`[Import] ✓ ${mes}/${ano} — ${lancsMes.length} inseridos`);
+        console.log(`[Import]    ✓ ${lancsMes.length} lançamentos inseridos em ${mes}/${ano}`);
+        logLinhas.push(`✅ ${nomeMes}/${ano}: ${lancsMes.length} lançamentos importados`);
       }
 
     } else {
-      // Ignora duplicatas pela chave data|descricao|valor
-      const { data: existentes } = await window.supabase
-        .from('lancamentos').select('descricao,data,valor')
-        .eq('user_id', currentUser.id).eq('competencia_id', competencia_id);
+      // Modo ignorar duplicatas: compara por data|descricao|valor dentro da competência correta
+      const { data: existentes, error: errExist } = await window.supabase
+        .from('lancamentos')
+        .select('descricao,data,valor')
+        .eq('user_id', currentUser.id)
+        .eq('competencia_id', competencia_id);
+
+      if (errExist) {
+        console.error(`[Import]    ✗ ERRO ao buscar existentes de ${mes}/${ano}:`, errExist);
+        logLinhas.push(`❌ ${nomeMes}/${ano}: erro ao verificar duplicatas — ${errExist.message}`);
+        erros += lancsMes.length;
+        continue;
+      }
 
       const existentesSet = new Set(
         (existentes || []).map(e => `${e.data}|${e.descricao}|${e.valor}`)
@@ -1444,41 +1512,66 @@ async function confirmarImportacao() {
       const paraInserir = lancsMes.filter(
         l => !existentesSet.has(`${l.data}|${l.descricao}|${l.valor}`)
       );
-      ignorados += lancsMes.length - paraInserir.length;
+      const duplicatas = lancsMes.length - paraInserir.length;
+      ignorados += duplicatas;
 
-      if (paraInserir.length > 0) {
-        const { error: errIns } = await window.supabase.from('lancamentos').insert(
-          paraInserir.map(l => ({
-            user_id: currentUser.id, competencia_id,
-            tipo: l.tipo, descricao: l.descricao, valor: l.valor, data: l.data, pago: true,
-          }))
-        );
-        if (errIns) {
-          console.error(`[Import] Erro ao inserir ${mes}/${ano}:`, errIns);
-          ignorados += paraInserir.length;
-        } else {
-          importados += paraInserir.length;
-        }
+      console.log(`[Import]    Existentes: ${existentes?.length || 0} | Duplicatas: ${duplicatas} | A inserir: ${paraInserir.length}`);
+
+      if (paraInserir.length === 0) {
+        logLinhas.push(`⏭ ${nomeMes}/${ano}: ${duplicatas} já existiam — nenhum novo`);
+        continue;
+      }
+
+      const payload = paraInserir.map(l => ({
+        user_id:        currentUser.id,
+        competencia_id, // ← sempre o ID do mês correto, nunca da competenciaAtiva
+        tipo:           l.tipo,
+        descricao:      l.descricao,
+        valor:          l.valor,
+        data:           l.data,   // ← data já é AAAA-MM-01 do mês da aba
+        pago:           true,
+      }));
+
+      const { error: errIns } = await window.supabase.from('lancamentos').insert(payload);
+
+      if (errIns) {
+        console.error(`[Import]    ✗ ERRO ao inserir lançamentos de ${mes}/${ano}:`, errIns);
+        logLinhas.push(`❌ ${nomeMes}/${ano}: erro no INSERT — ${errIns.message}`);
+        erros += paraInserir.length;
+      } else {
+        importados += paraInserir.length;
+        console.log(`[Import]    ✓ ${paraInserir.length} inseridos em ${mes}/${ano}${duplicatas > 0 ? ` (${duplicatas} ignorados)` : ''}`);
+        logLinhas.push(`✅ ${nomeMes}/${ano}: ${paraInserir.length} importados${duplicatas > 0 ? `, ${duplicatas} já existiam` : ''}`);
       }
     }
   }
 
+  console.log(`[Import] ════════════════════════════════════`);
+  console.log(`[Import] Resultado final: ${importados} importados | ${ignorados} ignorados | ${erros} com erro`);
+
+  // Recarrega competências e lançamentos DO MÊS ATIVO (não altera a competenciaAtiva)
   await carregarCompetencias();
   atualizarSeletorCompetencia();
   await carregarLancamentos();
 
+  // Monta detalhamento do resultado
+  const temErros = erros > 0;
   const detalhe = substituir
-    ? `<strong style="color:var(--color-entrada)">${importados}</strong> lançamentos reimportados`
-    : `<strong style="color:var(--color-entrada)">${importados}</strong> importados · <strong style="color:var(--text-muted)">${ignorados}</strong> ignorados (já existiam)`;
+    ? `<strong style="color:var(--color-entrada)">${importados}</strong> lançamentos reimportados${temErros ? ` · <strong style="color:var(--color-saida)">${erros}</strong> com erro` : ''}`
+    : `<strong style="color:var(--color-entrada)">${importados}</strong> importados · <strong style="color:var(--text-muted)">${ignorados}</strong> já existiam${temErros ? ` · <strong style="color:var(--color-saida)">${erros}</strong> com erro` : ''}`;
 
   if (progresso) progresso.innerHTML = `
-    <div style="text-align:center;padding:20px 0">
-      <div style="width:48px;height:48px;background:var(--color-entrada-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
-        <i class="ti ti-circle-check" style="font-size:24px;color:var(--color-entrada)"></i>
+    <div style="text-align:center;padding:20px 0 12px">
+      <div style="width:48px;height:48px;background:${temErros ? 'var(--color-saida-bg)' : 'var(--color-entrada-bg)'};border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+        <i class="ti ${temErros ? 'ti-alert-triangle' : 'ti-circle-check'}" style="font-size:24px;color:${temErros ? 'var(--color-saida)' : 'var(--color-entrada)'}"></i>
       </div>
-      <div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:4px">Importação concluída!</div>
-      <div style="font-size:13px;color:var(--text-secondary)">${detalhe}</div>
-      <button class="btn btn-primary btn-sm" style="margin-top:16px" onclick="showCfgTab('competencias')">Ver competências</button>
+      <div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:4px">Importação ${temErros ? 'com advertências' : 'concluída'}!</div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:16px">${detalhe}</div>
+      <div style="background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;text-align:left;margin-bottom:16px;max-height:220px;overflow-y:auto">
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Detalhes por mês</div>
+        ${logLinhas.map(l => `<div style="font-size:12.5px;color:var(--text-secondary);padding:3px 0;border-bottom:1px solid var(--border)">${l}</div>`).join('')}
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="showCfgTab('competencias')">Ver competências</button>
     </div>
   `;
   dadosImportacao = null;
