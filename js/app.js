@@ -201,9 +201,10 @@ function calcularTotais() {
       t[tipo] += parseFloat(l.valor) || 0;
     }
   });
-  // totalSaidas = tudo que sai (saída + cartão + investimento + empréstimo + categorias personalizadas)
-  const totalSaidas = t.saida + t.cartao_credito + t.investimento + t.emprestimo + totalCats;
-  const saldo       = t.entrada + t.rendimento - totalSaidas;
+  // totalSaidas = saída + cartão + categorias personalizadas
+  // emprestimo, investimento e rendimento são informativos — não entram no saldo nem nas saídas
+  const totalSaidas = t.saida + t.cartao_credito + totalCats;
+  const saldo       = t.entrada - totalSaidas;
   return { ...t, totalSaidas, saldo };
 }
 
@@ -1731,11 +1732,11 @@ async function renderDashboard() {
       totaisMap[tipo] += parseFloat(l.valor) || 0;
     }
   });
-  // Tudo que sai: tipos nativos de saída + todas as categorias personalizadas
+  // totalSaidas = saída + cartão + categorias personalizadas
+  // emprestimo, investimento e rendimento são informativos — não entram no saldo nem nas saídas
   const totalSaidas = totaisMap.saida + totaisMap.cartao_credito
-                    + totaisMap.investimento + totaisMap.emprestimo
                     + Object.values(totaisCatDash).reduce((a, b) => a + b, 0);
-  const saldo       = totaisMap.entrada + totaisMap.rendimento - totalSaidas;
+  const saldo       = totaisMap.entrada - totalSaidas;
 
   // Tipos nativos com movimentação
   const tiposConfig = [
