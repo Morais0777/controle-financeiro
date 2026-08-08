@@ -110,9 +110,9 @@ function calcularTotaisPeriodo(lista) {
     }
   });
 
-  // Tudo que sai: tipos nativos de saída + todas as categorias personalizadas
+  // totalSaidas = saída + cartão + categorias personalizadas
+  // emprestimo, investimento e rendimento são informativos — não entram no saldo nem nas saídas
   const totalSaidas = totaisMap.saida + totaisMap.cartao_credito
-                    + totaisMap.investimento + totaisMap.emprestimo + totaisMap.reserva
                     + Object.values(totaisCat).reduce((a, b) => a + b, 0);
   const saldo       = totaisMap.entrada - totalSaidas;
   return { ...totaisMap, totalSaidas, saldo, totaisCat };
