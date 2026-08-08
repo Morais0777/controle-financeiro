@@ -1295,6 +1295,30 @@ function mostrarPreviewImportacao() {
         <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Entradas</div>
       </div>
     </div>
+
+    <!-- Opção de modo de importação -->
+    <div style="background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:10px">
+        <i class="ti ti-settings" style="font-size:14px;margin-right:4px"></i>Modo de importação
+      </div>
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:8px">
+        <input type="radio" name="modoImportacao" value="ignorar" checked
+          style="margin-top:2px;accent-color:var(--accent)">
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--text-primary)">Ignorar duplicatas</div>
+          <div style="font-size:12px;color:var(--text-muted)">Importa apenas lançamentos novos. Os que já existem no banco são mantidos.</div>
+        </div>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer">
+        <input type="radio" name="modoImportacao" value="substituir"
+          style="margin-top:2px;accent-color:var(--color-saida)">
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--color-saida)">Substituir todos os meses</div>
+          <div style="font-size:12px;color:var(--text-muted)">Apaga todos os lançamentos existentes dos meses encontrados e reimporta tudo da planilha.</div>
+        </div>
+      </label>
+    </div>
+
     <div style="margin-bottom:16px">
       <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:8px">Meses que serão importados:</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
@@ -1326,6 +1350,32 @@ function mostrarPreviewImportacao() {
 async function confirmarImportacao() {
   if (!dadosImportacao) return;
   const { lancamentosProcessados } = dadosImportacao;
+
+  // Lê o modo selecionado pelo usuário (ignorar | substituir)
+  const modoRadio = document.querySelector('input[name="modoImportacao"]:checked');
+  const modoSubstituir = modoRadio?.value === 'substituir';
+
+  // Se substituir, pede confirmação extra antes de prosseguir
+  if (modoSubstituir) {
+    const mesesEnvolvidos = [...dadosImportacao.mesesEncontrados].sort().join(', ');
+    const confirmado = await new Promise(resolve => {
+      showConfirm(
+        'Atenção: substituição de dados',
+        `Todos os lançamentos existentes dos meses <strong>${mesesEnvolvidos}</strong> serão <strong style="color:var(--color-saida)">permanentemente apagados</strong> e substituídos pelos dados da planilha.<br><br>Essa ação não pode ser desfeita.`,
+        () => resolve(true)
+      );
+      // Captura o cancelamento monitorando o modal
+      setTimeout(() => {
+        const modal = document.getElementById('confirmModal');
+        if (modal) {
+          const cancelBtn = document.getElementById('confirmCancelBtn');
+          if (cancelBtn) cancelBtn.addEventListener('click', () => resolve(false), { once: true });
+        }
+      }, 50);
+    });
+    if (!confirmado) return;
+  }
+
   const s2 = document.getElementById('importacaoStep2');
   const s3 = document.getElementById('importacaoStep3');
   if (s2) s2.style.display = 'none';
@@ -1348,7 +1398,7 @@ async function confirmarImportacao() {
     if (progresso) progresso.textContent = `Importando ${new Date(ano, mes-1).toLocaleString('pt-BR', {month:'long'})} ${ano}...`;
 
     // Busca a competencia diretamente no banco (ignora cache em memória)
-    let { data: compData, error: compErr } = await window.supabase
+    let { data: compData } = await window.supabase
       .from('competencias').select('id')
       .eq('user_id', currentUser.id).eq('mes', mes).eq('ano', ano).maybeSingle();
 
@@ -1367,26 +1417,54 @@ async function confirmarImportacao() {
     }
 
     const competencia_id = compData.id;
-    console.log(`[Import] ${mes}/${ano} → competencia_id: ${competencia_id}`);
+    console.log(`[Import] ${mes}/${ano} → competencia_id: ${competencia_id} | modo: ${modoSubstituir ? 'substituir' : 'ignorar'}`);
 
-    const { data: existentes } = await window.supabase
-      .from('lancamentos').select('descricao,data,valor')
-      .eq('user_id', currentUser.id).eq('competencia_id', competencia_id);
-    const existentesSet = new Set((existentes || []).map(e => `${e.data}|${e.descricao}|${e.valor}`));
-    const paraInserir = lancsMes.filter(l => !existentesSet.has(`${l.data}|${l.descricao}|${l.valor}`));
-    ignorados += lancsMes.length - paraInserir.length;
-    if (paraInserir.length > 0) {
+    if (modoSubstituir) {
+      // Apaga TODOS os lançamentos existentes do mês antes de reinserir
+      const { error: errDel } = await window.supabase
+        .from('lancamentos')
+        .delete()
+        .eq('user_id', currentUser.id)
+        .eq('competencia_id', competencia_id);
+      if (errDel) {
+        console.error(`[Import] Erro ao limpar ${mes}/${ano}:`, errDel);
+        ignorados += lancsMes.length;
+        continue;
+      }
+      // Insere todos os lançamentos da planilha
       const { error } = await window.supabase.from('lancamentos').insert(
-        paraInserir.map(l => ({
+        lancsMes.map(l => ({
           user_id: currentUser.id, competencia_id,
           tipo: l.tipo, descricao: l.descricao, valor: l.valor, data: l.data, pago: true,
         }))
       );
       if (error) {
         console.error(`[Import] Erro ao inserir ${mes}/${ano}:`, error);
-        ignorados += paraInserir.length;
+        ignorados += lancsMes.length;
       } else {
-        importados += paraInserir.length;
+        importados += lancsMes.length;
+      }
+    } else {
+      // Modo padrão: ignora duplicatas pela chave data|descricao|valor
+      const { data: existentes } = await window.supabase
+        .from('lancamentos').select('descricao,data,valor')
+        .eq('user_id', currentUser.id).eq('competencia_id', competencia_id);
+      const existentesSet = new Set((existentes || []).map(e => `${e.data}|${e.descricao}|${e.valor}`));
+      const paraInserir = lancsMes.filter(l => !existentesSet.has(`${l.data}|${l.descricao}|${l.valor}`));
+      ignorados += lancsMes.length - paraInserir.length;
+      if (paraInserir.length > 0) {
+        const { error } = await window.supabase.from('lancamentos').insert(
+          paraInserir.map(l => ({
+            user_id: currentUser.id, competencia_id,
+            tipo: l.tipo, descricao: l.descricao, valor: l.valor, data: l.data, pago: true,
+          }))
+        );
+        if (error) {
+          console.error(`[Import] Erro ao inserir ${mes}/${ano}:`, error);
+          ignorados += paraInserir.length;
+        } else {
+          importados += paraInserir.length;
+        }
       }
     }
   }
@@ -1394,6 +1472,10 @@ async function confirmarImportacao() {
   await carregarCompetencias();
   atualizarSeletorCompetencia();
   await carregarLancamentos();
+
+  const modoLabel = modoSubstituir
+    ? `<strong style="color:var(--color-saida)">${ignorados}</strong> substituídos`
+    : `<strong style="color:var(--text-muted)">${ignorados}</strong> ignorados (já existiam)`;
 
   if (progresso) progresso.innerHTML = `
     <div style="text-align:center;padding:20px 0">
@@ -1403,7 +1485,7 @@ async function confirmarImportacao() {
       <div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:4px">Importação concluída!</div>
       <div style="font-size:13px;color:var(--text-secondary)">
         <strong style="color:var(--color-entrada)">${importados}</strong> lançamentos importados ·
-        <strong style="color:var(--text-muted)">${ignorados}</strong> ignorados (já existiam)
+        ${modoLabel}
       </div>
       <button class="btn btn-primary btn-sm" style="margin-top:16px" onclick="showCfgTab('competencias')">Ver competências</button>
     </div>
@@ -1848,6 +1930,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // A pré-seleção dos selects de relatório é feita por initRelatorios() em relatorios.js
 });
-
-
-
