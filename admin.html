@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinanceIQ — Administração</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css" />
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/reset.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg, #f4f5f7);
+      color: var(--text-primary, #1a1a2e);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    .adm-header {
+      background: var(--surface, #fff);
+      border-bottom: 1px solid var(--border, #e2e8f0);
+      padding: 0 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .adm-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--accent, #1a56db);
+    }
+    .adm-logo-mark {
+      width: 34px;
+      height: 34px;
+      background: var(--accent, #1a56db);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 18px;
+    }
+    .adm-header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13.5px;
+      color: var(--text-secondary, #6b7280);
+    }
+    .adm-badge {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .btn-logout {
+      background: none;
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text-secondary, #6b7280);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background .15s;
+    }
+    .btn-logout:hover { background: var(--surface-alt, #f8fafc); }
+
+    /* ── MAIN ── */
+    .adm-main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    /* ── STATS ── */
+    .adm-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      background: var(--surface, #fff);
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .stat-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .stat-icon.total   { background: #eff6ff; color: #1a56db; }
+    .stat-icon.pending { background: #fef3c7; color: #d97706; }
+    .stat-icon.active  { background: #f0fdf4; color: #16a34a; }
+    .stat-icon.blocked { background: #fef2f2; color: #dc2626; }
+    .stat-label { font-size: 12px; color: var(--text-secondary, #6b7280); margin-bottom: 2px; }
+    .stat-value { font-size: 24px; font-weight: 700; }
+
+    /* ── TABELA ── */
+    .adm-card {
+      background: var(--surface, #fff);
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .adm-card-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border, #e2e8f0);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .adm-card-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .adm-filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      border: 1px solid var(--border, #e2e8f0);
+      background: var(--surface, #fff);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      color: var(--text-secondary, #6b7280);
+      transition: all .15s;
+    }
+    .filter-btn:hover,
+    .filter-btn.active { background: var(--accent, #1a56db); color: #fff; border-color: var(--accent, #1a56db); }
+
+    .adm-search {
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 8px;
+      padding: 7px 12px 7px 34px;
+      font-size: 13px;
+      background: var(--surface-alt, #f8fafc) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E") no-repeat 10px center;
+      width: 200px;
+      outline: none;
+      color: var(--text-primary, #1a1a2e);
+    }
+    .adm-search:focus { border-color: var(--accent, #1a56db); }
+
+    .adm-table { width: 100%; border-collapse: collapse; }
+    .adm-table th {
+      padding: 12px 20px;
+      text-align: left;
+      font-size: 11.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--text-secondary, #6b7280);
+      background: var(--surface-alt, #f8fafc);
+      border-bottom: 1px solid var(--border, #e2e8f0);
+    }
+    .adm-table td {
+      padding: 14px 20px;
+      font-size: 13.5px;
+      border-bottom: 1px solid var(--border, #e2e8f0);
+      vertical-align: middle;
+    }
+    .adm-table tr:last-child td { border-bottom: none; }
+    .adm-table tr:hover td { background: var(--surface-alt, #f8fafc); }
+
+    .user-info { display: flex; align-items: center; gap: 12px; }
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--accent, #1a56db);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .user-name  { font-weight: 600; font-size: 13.5px; }
+    .user-email { font-size: 12px; color: var(--text-secondary, #6b7280); }
+
+    /* STATUS BADGE */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+    .badge-pendente  { background: #fef3c7; color: #92400e; } .badge-pendente::before  { background: #d97706; }
+    .badge-aprovado  { background: #f0fdf4; color: #166534; } .badge-aprovado::before  { background: #16a34a; }
+    .badge-bloqueado { background: #fef2f2; color: #991b1b; } .badge-bloqueado::before { background: #dc2626; }
+
+    /* AÇÕES */
+    .adm-actions { display: flex; gap: 6px; }
+    .btn-action {
+      border: none;
+      border-radius: 7px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: opacity .15s;
+    }
+    .btn-action:hover { opacity: .8; }
+    .btn-aprovar  { background: #f0fdf4; color: #16a34a; }
+    .btn-bloquear { background: #fef2f2; color: #dc2626; }
+    .btn-reativar { background: #eff6ff; color: #1a56db; }
+
+    /* EMPTY STATE */
+    .adm-empty {
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--text-secondary, #6b7280);
+    }
+    .adm-empty i { font-size: 40px; margin-bottom: 12px; display: block; opacity: .4; }
+
+    /* LOADING */
+    #adm-loading {
+      text-align: center;
+      padding: 48px;
+      color: var(--text-secondary, #6b7280);
+    }
+    .spin { animation: spin .8s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* TOAST */
+    #adm-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface, #fff);
+      border: 1px solid var(--border, #e2e8f0);
+      border-radius: 12px;
+      padding: 14px 18px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.12);
+      z-index: 500;
+      max-width: 360px;
+      font-size: 13.5px;
+      animation: toastIn .25s ease;
+    }
+    @keyframes toastIn { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+    /* MODAL CONFIRMAÇÃO */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: var(--surface, #fff);
+      border-radius: 16px;
+      padding: 28px;
+      max-width: 380px;
+      width: 90%;
+      box-shadow: 0 8px 32px rgba(0,0,0,.16);
+    }
+    .modal-title  { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+    .modal-text   { font-size: 13.5px; color: var(--text-secondary, #6b7280); margin-bottom: 24px; line-height: 1.6; }
+    .modal-btns   { display: flex; gap: 10px; justify-content: flex-end; }
+    .btn-cancel   { border: 1px solid var(--border, #e2e8f0); background: none; border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13.5px; }
+    .btn-confirm  { border: none; border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 13.5px; font-weight: 600; color: #fff; }
+    .btn-confirm.danger  { background: #dc2626; }
+    .btn-confirm.success { background: #16a34a; }
+    .btn-confirm.info    { background: #1a56db; }
+
+    @media (max-width: 768px) {
+      .adm-stats { grid-template-columns: repeat(2, 1fr); }
+      .adm-header { padding: 0 16px; }
+      .adm-main   { padding: 20px 12px; }
+      .adm-table th:nth-child(3),
+      .adm-table td:nth-child(3) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="adm-header">
+    <div class="adm-logo">
+      <div class="adm-logo-mark"><i class="ti ti-chart-pie"></i></div>
+      FinanceIQ
+      <span class="adm-badge">Admin</span>
+    </div>
+    <div class="adm-header-right">
+      <span id="adm-admin-email"></span>
+      <button class="btn-logout" onclick="handleLogout()">
+        <i class="ti ti-logout"></i> Sair
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="adm-main">
+
+    <!-- STATS -->
+    <div class="adm-stats">
+      <div class="stat-card">
+        <div class="stat-icon total"><i class="ti ti-users"></i></div>
+        <div>
+          <div class="stat-label">Total de usuários</div>
+          <div class="stat-value" id="stat-total">—</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon pending"><i class="ti ti-clock"></i></div>
+        <div>
+          <div class="stat-label">Aguardando aprovação</div>
+          <div class="stat-value" id="stat-pendente">—</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon active"><i class="ti ti-circle-check"></i></div>
+        <div>
+          <div class="stat-label">Aprovados</div>
+          <div class="stat-value" id="stat-aprovado">—</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blocked"><i class="ti ti-ban"></i></div>
+        <div>
+          <div class="stat-label">Bloqueados</div>
+          <div class="stat-value" id="stat-bloqueado">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABELA -->
+    <div class="adm-card">
+      <div class="adm-card-header">
+        <div class="adm-card-title">Usuários cadastrados</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <input class="adm-search" type="text" placeholder="Buscar por nome ou e-mail..." oninput="filterTable(this.value)" />
+          <div class="adm-filters">
+            <button class="filter-btn active" onclick="setFilter('todos', this)">Todos</button>
+            <button class="filter-btn" onclick="setFilter('pendente', this)">Pendentes</button>
+            <button class="filter-btn" onclick="setFilter('aprovado', this)">Aprovados</button>
+            <button class="filter-btn" onclick="setFilter('bloqueado', this)">Bloqueados</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="adm-loading">
+        <i class="ti ti-loader spin" style="font-size:28px"></i>
+        <p style="margin-top:8px">Carregando usuários...</p>
+      </div>
+
+      <div id="adm-table-wrap" style="display:none;overflow-x:auto">
+        <table class="adm-table">
+          <thead>
+            <tr>
+              <th>Usuário</th>
+              <th>Status</th>
+              <th>Cadastro</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="adm-tbody"></tbody>
+        </table>
+        <div id="adm-empty" class="adm-empty" style="display:none">
+          <i class="ti ti-mood-empty"></i>
+          Nenhum usuário encontrado
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL CONFIRMAÇÃO -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal-box">
+      <div class="modal-title" id="modal-title"></div>
+      <div class="modal-text"  id="modal-text"></div>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+        <button class="btn-confirm" id="modal-confirm-btn" onclick="confirmModal()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="adm-toast">
+    <span id="adm-toast-icon" style="font-size:18px;display:flex"></span>
+    <span id="adm-toast-msg"></span>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="services/supabase.js"></script>
+  <script>
+    // ── ESTADO ──────────────────────────────────
+    let allUsers      = [];
+    let filterStatus  = 'todos';
+    let searchTerm    = '';
+    let modalAction   = null;
+    let modalUserId   = null;
+
+    // ── INIT ─────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      const { data: { session } } = await window.supabase.auth.getSession();
+
+      if (!session) {
+        window.location.href = getBaseUrl() + 'index.html';
+        return;
+      }
+
+      // Verifica se é admin
+      const { data: profile } = await window.supabase
+        .from('profiles')
+        .select('role, email')
+        .eq('id', session.user.id)
+        .single();
+
+      if (!profile || profile.role !== 'admin') {
+        alert('Acesso restrito. Você não tem permissão para acessar esta página.');
+        window.location.href = getBaseUrl() + 'index.html';
+        return;
+      }
+
+      document.getElementById('adm-admin-email').textContent = session.user.email;
+      await loadUsers();
+    });
+
+    function getBaseUrl() {
+      const path = window.location.pathname;
+      return window.location.origin + path.substring(0, path.lastIndexOf('/') + 1);
+    }
+
+    // ── CARREGAR USUÁRIOS ────────────────────────
+    async function loadUsers() {
+      const { data, error } = await window.supabase
+        .from('profiles')
+        .select('id, username, email, status, role, created_at')
+        .neq('role', 'admin')          // não mostra o próprio admin
+        .order('created_at', { ascending: false });
+
+      document.getElementById('adm-loading').style.display    = 'none';
+      document.getElementById('adm-table-wrap').style.display = 'block';
+
+      if (error) {
+        showToast('Erro ao carregar usuários.', 'error');
+        return;
+      }
+
+      allUsers = data || [];
+      updateStats();
+      renderTable();
+    }
+
+    // ── STATS ────────────────────────────────────
+    function updateStats() {
+      document.getElementById('stat-total').textContent    = allUsers.length;
+      document.getElementById('stat-pendente').textContent = allUsers.filter(u => u.status === 'pendente').length;
+      document.getElementById('stat-aprovado').textContent = allUsers.filter(u => u.status === 'aprovado').length;
+      document.getElementById('stat-bloqueado').textContent= allUsers.filter(u => u.status === 'bloqueado').length;
+    }
+
+    // ── RENDERIZAR TABELA ────────────────────────
+    function renderTable() {
+      const tbody = document.getElementById('adm-tbody');
+      const empty = document.getElementById('adm-empty');
+
+      let users = allUsers;
+
+      // Filtro por status
+      if (filterStatus !== 'todos') {
+        users = users.filter(u => u.status === filterStatus);
+      }
+
+      // Filtro por busca
+      if (searchTerm) {
+        const s = searchTerm.toLowerCase();
+        users = users.filter(u =>
+          (u.username || '').toLowerCase().includes(s) ||
+          (u.email    || '').toLowerCase().includes(s)
+        );
+      }
+
+      if (users.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        return;
+      }
+
+      empty.style.display = 'none';
+      tbody.innerHTML = users.map(u => {
+        const inicial = (u.username || u.email || '?').charAt(0).toUpperCase();
+        const nome    = u.username || '—';
+        const data    = u.created_at
+          ? new Date(u.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' })
+          : '—';
+
+        const badgeClass = {
+          pendente:  'badge-pendente',
+          aprovado:  'badge-aprovado',
+          bloqueado: 'badge-bloqueado',
+        }[u.status] || 'badge-pendente';
+
+        const badgeLabel = {
+          pendente:  'Pendente',
+          aprovado:  'Aprovado',
+          bloqueado: 'Bloqueado',
+        }[u.status] || u.status;
+
+        let acoes = '';
+        if (u.status === 'pendente') {
+          acoes = `
+            <button class="btn-action btn-aprovar"  onclick="askAcao('aprovar','${u.id}','${nome}')">
+              <i class="ti ti-check"></i> Aprovar
+            </button>
+            <button class="btn-action btn-bloquear" onclick="askAcao('bloquear','${u.id}','${nome}')">
+              <i class="ti ti-ban"></i> Bloquear
+            </button>`;
+        } else if (u.status === 'aprovado') {
+          acoes = `
+            <button class="btn-action btn-bloquear" onclick="askAcao('bloquear','${u.id}','${nome}')">
+              <i class="ti ti-ban"></i> Bloquear
+            </button>`;
+        } else if (u.status === 'bloqueado') {
+          acoes = `
+            <button class="btn-action btn-reativar" onclick="askAcao('reativar','${u.id}','${nome}')">
+              <i class="ti ti-refresh"></i> Reativar
+            </button>`;
+        }
+
+        return `
+          <tr data-status="${u.status}">
+            <td>
+              <div class="user-info">
+                <div class="user-avatar">${inicial}</div>
+                <div>
+                  <div class="user-name">${nome}</div>
+                  <div class="user-email">${u.email || '—'}</div>
+                </div>
+              </div>
+            </td>
+            <td><span class="badge ${badgeClass}">${badgeLabel}</span></td>
+            <td>${data}</td>
+            <td><div class="adm-actions">${acoes}</div></td>
+          </tr>`;
+      }).join('');
+    }
+
+    // ── FILTROS ──────────────────────────────────
+    function setFilter(status, btn) {
+      filterStatus = status;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTable();
+    }
+
+    function filterTable(value) {
+      searchTerm = value;
+      renderTable();
+    }
+
+    // ── AÇÕES ────────────────────────────────────
+    function askAcao(acao, userId, nome) {
+      modalAction = acao;
+      modalUserId = userId;
+
+      const configs = {
+        aprovar: {
+          title: `Aprovar ${nome}?`,
+          text:  `O usuário ${nome} terá acesso liberado ao FinanceIQ imediatamente.`,
+          btnClass: 'success',
+          btnLabel: 'Aprovar',
+        },
+        bloquear: {
+          title: `Bloquear ${nome}?`,
+          text:  `O usuário ${nome} será impedido de acessar o sistema. Você pode reativar a qualquer momento.`,
+          btnClass: 'danger',
+          btnLabel: 'Bloquear',
+        },
+        reativar: {
+          title: `Reativar ${nome}?`,
+          text:  `O usuário ${nome} voltará a ter acesso ao FinanceIQ.`,
+          btnClass: 'info',
+          btnLabel: 'Reativar',
+        },
+      };
+
+      const c = configs[acao];
+      document.getElementById('modal-title').textContent    = c.title;
+      document.getElementById('modal-text').textContent     = c.text;
+      const btn = document.getElementById('modal-confirm-btn');
+      btn.className = `btn-confirm ${c.btnClass}`;
+      btn.textContent = c.btnLabel;
+      document.getElementById('modal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('open');
+      modalAction = null;
+      modalUserId = null;
+    }
+
+    async function confirmModal() {
+      if (!modalAction || !modalUserId) return;
+
+      const novoStatus = {
+        aprovar:  'aprovado',
+        bloquear: 'bloqueado',
+        reativar: 'aprovado',
+      }[modalAction];
+
+      closeModal();
+
+      const { error } = await window.supabase
+        .from('profiles')
+        .update({ status: novoStatus })
+        .eq('id', modalUserId);
+
+      if (error) {
+        showToast('Erro ao atualizar usuário.', 'error');
+        return;
+      }
+
+      // Atualiza localmente sem recarregar tudo
+      const idx = allUsers.findIndex(u => u.id === modalUserId);
+      if (idx !== -1) allUsers[idx].status = novoStatus;
+
+      updateStats();
+      renderTable();
+
+      const msgs = {
+        aprovar:  'Usuário aprovado com sucesso!',
+        bloquear: 'Usuário bloqueado.',
+        reativar: 'Usuário reativado com sucesso!',
+      };
+      showToast(msgs[modalAction], novoStatus === 'bloqueado' ? 'error' : 'success');
+    }
+
+    // Fechar modal clicando fora
+    document.getElementById('modal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    // ── LOGOUT ───────────────────────────────────
+    async function handleLogout() {
+      await window.supabase.auth.signOut();
+      window.location.href = getBaseUrl() + 'index.html';
+    }
+
+    // ── TOAST ────────────────────────────────────
+    let toastTimer;
+    function showToast(msg, type = 'success') {
+      const toast = document.getElementById('adm-toast');
+      const icon  = document.getElementById('adm-toast-icon');
+      const text  = document.getElementById('adm-toast-msg');
+
+      const icons = {
+        success: '<i class="ti ti-circle-check" style="color:#16a34a"></i>',
+        error:   '<i class="ti ti-circle-x"     style="color:#dc2626"></i>',
+        warning: '<i class="ti ti-alert-triangle" style="color:#d97706"></i>',
+      };
+
+      icon.innerHTML  = icons[type] || icons.success;
+      text.textContent = msg;
+      toast.style.display = 'flex';
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 3500);
+    }
+  </script>
+</body>
+</html>

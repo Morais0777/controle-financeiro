@@ -97,6 +97,34 @@ async function handleLogin(event) {
       return;
     }
 
+    // Verifica status do usuário na tabela profiles
+    const { data: profile } = await window.supabase
+      .from('profiles')
+      .select('status, role')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profile?.status === 'bloqueado') {
+      await window.supabase.auth.signOut();
+      showToast('Sua conta está bloqueada. Entre em contato com o administrador.', 'error');
+      return;
+    }
+
+    if (profile?.status === 'pendente') {
+      await window.supabase.auth.signOut();
+      showToast('Sua conta ainda não foi aprovada. Aguarde a liberação pelo administrador.', 'warning');
+      return;
+    }
+
+    // Redireciona admin para painel de administração
+    if (profile?.role === 'admin') {
+      showToast('Bem-vindo, Admin! Redirecionando...', 'success');
+      setTimeout(() => {
+        window.location.href = getBaseUrl() + 'admin.html';
+      }, 1000);
+      return;
+    }
+
     showToast('Login realizado! Redirecionando...', 'success');
     setTimeout(() => {
       window.location.href = getBaseUrl() + 'app.html';
@@ -153,13 +181,42 @@ async function handleRegister(event) {
     });
 
     if (error) {
+      // O Supabase pode criar o usuário mas falhar só no envio do e-mail (limite do plano free).
+      // Nesse caso ainda levamos para a tela de verificação com opção de reenvio.
+      if (
+        error.message.includes('Error sending confirmation email') ||
+        error.message.includes('sending confirmation email')
+      ) {
+        pendingRegisterData = { username, email, password };
+        showToast(
+          'Conta criada! Houve um problema no envio do e-mail. Use "Reenviar código" na próxima tela.',
+          'warning'
+        );
+        showVerify(email);
+        return;
+      }
       showToast(translateAuthError(error.message), 'error');
       return;
     }
 
+    // Verifica se o Supabase criou o usuário mas identityData está vazio
+    // (ocorre quando "Confirm email" está ON e o e-mail foi enviado normalmente)
     pendingRegisterData = { username, email, password };
-    showToast('Código enviado para o seu e-mail!', 'success');
-    showVerify(email);
+
+    if (data.user && !data.session) {
+      // Confirmação de e-mail necessária — fluxo normal com OTP
+      showToast('Código enviado para o seu e-mail!', 'success');
+      showVerify(email);
+    } else if (data.session) {
+      // "Confirm email" está desligado — entra direto
+      showToast('Conta criada! Redirecionando...', 'success');
+      setTimeout(() => {
+        window.location.href = getBaseUrl() + 'app.html';
+      }, 1000);
+    } else {
+      showToast('Código enviado para o seu e-mail!', 'success');
+      showVerify(email);
+    }
 
   } catch (err) {
     showToast('Erro ao criar conta. Tente novamente.', 'error');
@@ -293,6 +350,8 @@ function translateAuthError(message) {
     'Email rate limit exceeded':                'Muitas tentativas. Aguarde um pouco.',
     'Invalid OTP':                              'Código inválido',
     'Token has expired or is invalid':          'Código expirado. Solicite um novo.',
+    'Error sending confirmation email':         'Limite de e-mails atingido. Use "Reenviar código" ou tente mais tarde.',
+    'over_email_send_rate_limit':               'Muitos e-mails enviados. Aguarde alguns minutos.',
   };
   return t[message] || message;
 }
