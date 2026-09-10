@@ -25,6 +25,8 @@ function showLogin(e) {
   document.getElementById('tabRegister').classList.remove('active');
   document.getElementById('authTitle').textContent    = 'Bem-vindo de volta';
   document.getElementById('authSubtitle').textContent = 'Entre na sua conta para continuar';
+  const p = document.getElementById('pendingForm');
+  if (p) p.style.display = 'none';
 }
 
 function showRegister(e) {
@@ -38,6 +40,51 @@ function showRegister(e) {
   document.getElementById('tabLogin').classList.remove('active');
   document.getElementById('authTitle').textContent    = 'Criar conta';
   document.getElementById('authSubtitle').textContent = 'Preencha os dados abaixo para começar';
+}
+
+function showPendingApproval() {
+  document.getElementById('loginForm').style.display    = 'none';
+  document.getElementById('registerForm').style.display = 'none';
+  document.getElementById('verifyForm').style.display   = 'none';
+  document.getElementById('forgotForm').style.display   = 'none';
+  document.getElementById('authTabs').style.display     = 'none';
+  document.getElementById('authTitle').textContent      = 'Cadastro realizado!';
+  document.getElementById('authSubtitle').textContent   = '';
+
+  // Cria ou reutiliza o painel de aguardando aprovação
+  let pendingDiv = document.getElementById('pendingForm');
+  if (!pendingDiv) {
+    pendingDiv = document.createElement('div');
+    pendingDiv.id = 'pendingForm';
+    document.querySelector('.auth-form-container').appendChild(pendingDiv);
+  }
+
+  pendingDiv.style.display = 'block';
+  pendingDiv.innerHTML = `
+    <div style="text-align:center;padding:16px 0">
+      <div style="width:64px;height:64px;background:#fef3c7;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px">
+        ⏳
+      </div>
+      <h3 style="font-size:17px;font-weight:700;color:var(--text-primary);margin:0 0 10px">
+        Aguardando aprovação
+      </h3>
+      <p style="font-size:13.5px;color:var(--text-secondary);line-height:1.7;margin:0 0 24px">
+        Sua conta foi criada com sucesso!<br>
+        Um administrador precisa aprovar o seu acesso.<br>
+        Você receberá uma notificação quando for liberado.
+      </p>
+      <button onclick="showLogin()" style="
+        background:none;
+        border:1px solid var(--border);
+        border-radius:8px;
+        padding:10px 24px;
+        font-size:13.5px;
+        cursor:pointer;
+        color:var(--text-secondary);
+        width:100%;
+      ">← Voltar ao login</button>
+    </div>
+  `;
 }
 
 function showVerify(email) {
@@ -204,18 +251,17 @@ async function handleRegister(event) {
     pendingRegisterData = { username, email, password };
 
     if (data.user && !data.session) {
-      // Confirmação de e-mail necessária — fluxo normal com OTP
-      showToast('Código enviado para o seu e-mail!', 'success');
-      showVerify(email);
+      // Cadastro criado — mostra tela de aguardando aprovação
+      showToast('Conta criada! Aguarde a aprovação do administrador.', 'success');
+      showPendingApproval();
     } else if (data.session) {
-      // "Confirm email" está desligado — entra direto
-      showToast('Conta criada! Redirecionando...', 'success');
-      setTimeout(() => {
-        window.location.href = getBaseUrl() + 'app.html';
-      }, 1000);
+      // "Confirm email" desligado — mas ainda precisa de aprovação
+      await window.supabase.auth.signOut();
+      showToast('Conta criada! Aguarde a aprovação do administrador.', 'success');
+      showPendingApproval();
     } else {
-      showToast('Código enviado para o seu e-mail!', 'success');
-      showVerify(email);
+      showToast('Conta criada! Aguarde a aprovação do administrador.', 'success');
+      showPendingApproval();
     }
 
   } catch (err) {
@@ -364,3 +410,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = getBaseUrl() + 'app.html';
   }
 });
+
