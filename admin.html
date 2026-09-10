@@ -548,20 +548,20 @@
         let acoes = '';
         if (u.status === 'pendente') {
           acoes = `
-            <button class="btn-action btn-aprovar"  onclick="askAcao('aprovar','${u.id}','${nome}')">
+            <button class="btn-action btn-aprovar"  data-acao="aprovar"  data-id="${u.id}" data-nome="${nome}">
               <i class="ti ti-check"></i> Aprovar
             </button>
-            <button class="btn-action btn-bloquear" onclick="askAcao('bloquear','${u.id}','${nome}')">
+            <button class="btn-action btn-bloquear" data-acao="bloquear" data-id="${u.id}" data-nome="${nome}">
               <i class="ti ti-ban"></i> Bloquear
             </button>`;
         } else if (u.status === 'aprovado') {
           acoes = `
-            <button class="btn-action btn-bloquear" onclick="askAcao('bloquear','${u.id}','${nome}')">
+            <button class="btn-action btn-bloquear" data-acao="bloquear" data-id="${u.id}" data-nome="${nome}">
               <i class="ti ti-ban"></i> Bloquear
             </button>`;
         } else if (u.status === 'bloqueado') {
           acoes = `
-            <button class="btn-action btn-reativar" onclick="askAcao('reativar','${u.id}','${nome}')">
+            <button class="btn-action btn-reativar" data-acao="reativar" data-id="${u.id}" data-nome="${nome}">
               <i class="ti ti-refresh"></i> Reativar
             </button>`;
         }
@@ -674,6 +674,16 @@
       showToast(msgs[modalAction], novoStatus === 'bloqueado' ? 'error' : 'success');
     }
 
+    // Event listener delegado para botões de ação
+    document.getElementById('adm-tbody').addEventListener('click', function(e) {
+      const btn = e.target.closest('[data-acao]');
+      if (!btn) return;
+      const acao = btn.dataset.acao;
+      const id   = btn.dataset.id;
+      const nome = btn.dataset.nome;
+      if (acao && id) askAcao(acao, id, nome);
+    });
+
     // Fechar modal clicando fora
     document.getElementById('modal').addEventListener('click', function(e) {
       if (e.target === this) closeModal();
@@ -708,4 +718,3 @@
   </script>
 </body>
 </html>
-
