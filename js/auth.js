@@ -235,11 +235,8 @@ async function handleRegister(event) {
         error.message.includes('sending confirmation email')
       ) {
         pendingRegisterData = { username, email, password };
-        showToast(
-          'Conta criada! Houve um problema no envio do e-mail. Use "Reenviar código" na próxima tela.',
-          'warning'
-        );
-        showVerify(email);
+        showToast('Conta criada! Aguarde a aprovação do administrador.', 'success');
+        showPendingApproval();
         return;
       }
       showToast(translateAuthError(error.message), 'error');
@@ -410,4 +407,3 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = getBaseUrl() + 'app.html';
   }
 });
-
