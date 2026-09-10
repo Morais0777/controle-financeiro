@@ -641,26 +641,30 @@
     async function confirmModal() {
       if (!modalAction || !modalUserId) return;
 
+      // Salva os valores ANTES de closeModal() zerá-los
+      const action = modalAction;
+      const userId = modalUserId;
+
       const novoStatus = {
         aprovar:  'aprovado',
         bloquear: 'bloqueado',
         reativar: 'aprovado',
-      }[modalAction];
+      }[action];
 
       closeModal();
 
       const { error } = await window.supabase
         .from('profiles')
         .update({ status: novoStatus })
-        .eq('id', modalUserId);
+        .eq('id', userId);
 
       if (error) {
         showToast('Erro ao atualizar usuário.', 'error');
+        console.error('Erro Supabase:', error);
         return;
       }
 
-      // Atualiza localmente sem recarregar tudo
-      const idx = allUsers.findIndex(u => u.id === modalUserId);
+      const idx = allUsers.findIndex(u => u.id === userId);
       if (idx !== -1) allUsers[idx].status = novoStatus;
 
       updateStats();
@@ -671,7 +675,7 @@
         bloquear: 'Usuário bloqueado.',
         reativar: 'Usuário reativado com sucesso!',
       };
-      showToast(msgs[modalAction], novoStatus === 'bloqueado' ? 'error' : 'success');
+      showToast(msgs[action], novoStatus === 'bloqueado' ? 'error' : 'success');
     }
 
     // Event listener delegado para botões de ação
