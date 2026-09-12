@@ -309,11 +309,83 @@
     .btn-confirm.info    { background: #1a56db; }
 
     @media (max-width: 768px) {
-      .adm-stats { grid-template-columns: repeat(2, 1fr); }
-      .adm-header { padding: 0 16px; }
-      .adm-main   { padding: 20px 12px; }
+      /* HEADER MOBILE */
+      .adm-header {
+        padding: 0 14px;
+        height: 54px;
+      }
+      .adm-logo { font-size: 16px; gap: 8px; }
+      .adm-logo-mark { width: 30px; height: 30px; font-size: 15px; }
+      .adm-badge { font-size: 11px; padding: 2px 8px; }
+      #adm-admin-email { display: none; }
+      .btn-logout { padding: 5px 10px; font-size: 12px; }
+      .btn-logout i { font-size: 14px; }
+
+      /* MAIN MOBILE */
+      .adm-main { padding: 14px 12px; }
+
+      /* STATS MOBILE — 2x2 compacto */
+      .adm-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+      .stat-card { padding: 14px 12px; gap: 10px; border-radius: 10px; }
+      .stat-icon { width: 36px; height: 36px; font-size: 17px; border-radius: 8px; }
+      .stat-label { font-size: 11px; }
+      .stat-value { font-size: 20px; }
+
+      /* CARD HEADER MOBILE */
+      .adm-card { border-radius: 12px; }
+      .adm-card-header {
+        padding: 14px 14px 10px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+      .adm-card-title { font-size: 15px; }
+      .adm-search { width: 100%; }
+      .adm-filters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+      .filter-btn { padding: 6px 4px; font-size: 11.5px; text-align: center; }
+
+      /* TABELA MOBILE — esconde colunas desnecessárias */
       .adm-table th:nth-child(3),
       .adm-table td:nth-child(3) { display: none; }
+      .adm-table th { padding: 10px 12px; font-size: 11px; }
+      .adm-table td { padding: 12px 12px; }
+
+      /* USUÁRIO MOBILE */
+      .user-avatar { width: 32px; height: 32px; font-size: 13px; }
+      .user-name  { font-size: 13px; }
+      .user-email { font-size: 11px; }
+      .user-info  { gap: 8px; }
+
+      /* BADGE MOBILE */
+      .badge { font-size: 11px; padding: 2px 8px; }
+
+      /* AÇÕES MOBILE — botões empilhados */
+      .adm-actions { flex-direction: column; gap: 5px; }
+      .btn-action {
+        font-size: 11.5px;
+        padding: 5px 10px;
+        border-radius: 6px;
+        justify-content: center;
+      }
+
+      /* MODAL MOBILE */
+      .modal-box { padding: 20px 18px; border-radius: 14px; }
+      .modal-title { font-size: 15px; }
+      .modal-text  { font-size: 13px; margin-bottom: 18px; }
+      .modal-btns  { gap: 8px; }
+      .btn-cancel, .btn-confirm { padding: 9px 14px; font-size: 13px; flex: 1; text-align: center; }
+
+      /* TOAST MOBILE */
+      #adm-toast { bottom: 16px; right: 12px; left: 12px; max-width: none; font-size: 13px; }
+    }
+
+    @media (max-width: 400px) {
+      .adm-filters { grid-template-columns: repeat(2, 1fr); }
+      .stat-value { font-size: 18px; }
     }
   </style>
 </head>
@@ -722,3 +794,4 @@
   </script>
 </body>
 </html>
+
